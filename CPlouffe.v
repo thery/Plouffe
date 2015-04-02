@@ -598,13 +598,12 @@ assert (F : ex_series (fun i => (16 ^ d / 16 * 2 ^ p) * (1 / 16) ^ i)%R).
 apply: ex_series_le F => n.
 have F1 : (0 < 16 ^ n)%R by apply: pow_lt; lra.
 have F2 : (0 < (8 * n + j) %:R)%R   by apply: (lt_INR 0); lia.
-split.
-  repeat (apply: Rcomplements.Rdiv_le_0_compat || apply: Rmult_le_pos);
-    (try by apply: pow_le; lra); tlra.
-  by apply: Rmult_lt_0_compat; lra.
-apply: Rmult_le_compat_l.
+have H1: (0 <= 16 ^ d / 16 * 2 ^ p)%R.
   repeat (apply: Rcomplements.Rdiv_le_0_compat || apply: Rmult_le_pos);
     (try by apply: pow_le; lra); lra.
+apply:(Rle_trans _ (16 ^ d / 16 * 2 ^ p / (16 ^ n * (8 * n + j) %:R))); last first.
+  apply: Rmult_le_compat_l.
+    by apply H1.
 rewrite Rinv_mult_distr; tlra.
 have ->: ((1 / 16) ^ n = / (16 ^ n) * 1)%R.
   rewrite /Rdiv Rmult_1_l Rinv_pow; lra.
@@ -614,6 +613,11 @@ have ->: (1 = 1 / 1)%R by field.
 rewrite /Rdiv Rmult_1_l.
 apply: Rle_Rinv; tlra.
 by apply: (le_INR 1); lia.
+set gg := (16 ^ d / 16 * 2 ^ p / (16 ^ n * (8 * n + j) %:R))%R.
+  rewrite  /Hierarchy.norm /= /abs /= Rabs_right.
+    by apply: Req_le. 
+apply: Rle_ge; apply: Rdiv_le_0_compat=>//.
+by apply:Rmult_lt_0_compat.
 Qed.
 
 Lemma series_bound j : 0 < j -> 

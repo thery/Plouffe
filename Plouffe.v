@@ -45,6 +45,14 @@ rewrite plus_n_Sm Plus.plus_comm mult_comm /trm /hole Nat.mod_add;tlia.
 by rewrite  Nat.mod_small /= ?Rmult_0_l ?Rplus_0_r /s ?IHl;tlia.
 Qed.
 
+Lemma sum_n_holes_small a g k n 
+        (trm := fun i => hole k a i * g i) l :
+ (S l < k)%nat
+    -> sum_n (fun i => trm (S(k * n) + i)%nat) l = 0.
+Proof.
+by move=> Hlk; rewrite sum_n_Reals sum_f_R0_holes_small.
+Qed.
+
 Lemma sumf_f_R0_add_r f m n : (n <> 0)%nat ->
   sum_f_R0 f (m + n) =
       sum_f_R0 f m + sum_f_R0 (fun i => f (S m + i)%nat) (pred n).
@@ -75,14 +83,25 @@ congr (a _ * g _); tlia.
 by rewrite -mult_succ_l Nat.div_mul.
 Qed.
 
+Lemma sum_n_holes k a g n :
+  (k <> 0)%nat -> sum_n (fun i => hole k a i * g i) (k * n) =
+     sum_n (fun i => a i * g (k * i)%nat) n.
+Proof.
+by move=> kpos; rewrite !sum_n_Reals sum_f_R0_holes.
+Qed.
+
+
+
+
+  
 Lemma fill_holes : forall k a x, (k <> 0)%nat ->
   ex_pseries a (x ^ k)->
   PSeries (hole k a) x = Series (fun n => a n * x ^ (k * n)).
-move=> k a x kn0 exs; rewrite /PSeries /Series.
-rewrite -(Lim_seq_subseq (sum_f_R0 _) (fun n => k * n)%nat).
+  move=> k a x kn0 exs; rewrite /PSeries /Series.
+rewrite -(Lim_seq_subseq (sum_n _) (fun n => k * n)%nat).
 - set u := fun _ => _; set v:= sum_n _.
   rewrite (Lim_seq_ext u v) /u /v // => n.
-    by apply: sum_f_R0_holes.
+    by apply: sum_n_holes.
   apply: eventually_subseq => n.
   by rewrite mult_succ_r; lia.
 case: exs => l il.
@@ -91,19 +110,20 @@ case (il eps Heps) => // N Pn; exists (k * N)%nat => n nN.
 rewrite [n](div_mod _ _ kn0).
 set trm := (fun _ =>  _).
 case: (eq_nat_dec (n mod k) 0) => [->|Dk].
-  rewrite plus_0_r sum_f_R0_holes //.
-  rewrite (PartSum.sum_eq _ (fun i => (x ^ k) ^ i * a i)); last first.
-    by move => i ile; rewrite Rmult_comm; congr (_ * _); rewrite pow_mult.
+  rewrite plus_0_r sum_n_holes //.
+  rewrite  (sum_n_ext  _ (fun i => (x ^ k) ^ i * a i)); last first.
+    by move => i; rewrite Rmult_comm; congr (_ * _); rewrite pow_mult.
   apply: Pn.
   by apply: Nat.div_le_lower_bound; lia.
-rewrite sumf_f_R0_add_r //.
-rewrite (_ : sum_f_R0 _ (pred _) = 0) ?Rplus_0_r; last first.
-  apply: sum_f_R0_holes_small.
+move: (sumf_f_R0_add_r trm (k * (n / k)) (n mod k)).
+rewrite -!sum_n_Reals=> -> //.
+rewrite (_ : sum_n _ (pred _) = 0) ?Rplus_0_r; last first.
+  apply: sum_n_holes_small.
   have := Nat.mod_upper_bound n _ kn0.
   by case: (_ mod _)%nat Dk => [|u] /=; tlia.
-rewrite sum_f_R0_holes //.
-rewrite (PartSum.sum_eq _ (fun i => (x ^ k) ^ i * a i)); last first.
-  by move => i ile; rewrite Rmult_comm; congr (_ * _); rewrite pow_mult.
+rewrite sum_n_holes //.
+rewrite (sum_n_ext _ (fun i => (x ^ k) ^ i * a i)); last first.
+  by move => i; rewrite Rmult_comm; congr (_ * _); rewrite pow_mult.
 apply: Pn.
 by apply: Nat.div_le_lower_bound; lia.
 Qed.
@@ -186,10 +206,11 @@ have der_xSn x : is_derive f x (x ^ n).
 apply is_RInt_ext with (Derive f); first by move=> x Hx; apply/is_derive_unique. 
 have -> : b ^ S n / (S n) %:R = f b - f 0.
   by rewrite /f pow_ne_zero //; field; apply:not_0_INR.
-apply:is_RInt_Derive=> x Hx; rewrite /f; first by auto_derive.
-apply: (Continuity.continuity_pt_ext (fun x => x ^ n) (Derive f)).
+apply:is_RInt_derive=>  x Hx; rewrite /f.
+   by apply: Derive_correct; auto_derive.
+apply: (continuous_ext (fun x => x ^ n) (Derive f)).
   by move=> y; rewrite /f; apply eq_sym; apply/is_derive_unique.
-by apply:derivable_continuous_pt; auto_derive.
+by apply: ex_derive_continuous; auto_derive.
 Qed.
 
 Lemma RInt_pow n  b : RInt (fun x => x ^ n) 0 b = b ^ (S n)/ (S n)%:R.
@@ -296,9 +317,9 @@ by apply: is_derive_unique; auto_derive; Rcotpatch; tlra; field;lra.
 Qed.
 
 Lemma Continuity_x2 x : 
-  continuity_pt (fun x0 : R => (4 - 4 * x0) / (x0 ^ 2 - 2 * x0 + 2)) x.
+  continuous (fun x0 : R => (4 - 4 * x0) / (x0 ^ 2 - 2 * x0 + 2)) x.
 Proof.
- apply:derivable_continuous_pt; auto_derive.
+ apply:ex_derive_continuous; auto_derive.
 by have hx := Pos_x2 x; lra.
 Qed.
 
@@ -316,8 +337,8 @@ have ->: 2 * (ln 2 - ln 1) = f 1 - f 0.
 apply: RInt_Derive => x _.
   rewrite /f;auto_derive.
   by have := Pos_x2 x; lra.
-apply:  (continuity_pt_ext (fun x => (4 - 4 * x) / (x ^ 2 - 2 * x + 2))).
- by move=> z; rewrite Derive_x2.
+apply:  (continuous_ext (fun x => (4 - 4 * x) / (x ^ 2 - 2 * x + 2))).
+  by move=> z; rewrite Derive_x2.
 exact: Continuity_x2.
 Qed.
 
@@ -349,12 +370,12 @@ by apply: is_derive_unique; auto_derive; Rcotpatch; tlra;field; lra.
 Qed.
 
 Lemma Continuity_inv_x2 x (Hx : 0 <= x <= 1) : 
-  continuity_pt (fun x0 : R => 4 * x0 / (x0 ^ 2 - 2)) x.
+  continuous(fun x0 : R => 4 * x0 / (x0 ^ 2 - 2)) x.
 Proof.
 have hx := (X_between x Hx).
 have hx2 := ( Sqrt_x2 x hx). 
 have hx2': x^2 -2 < 0; tlra.
-by apply:derivable_continuous_pt; auto_derive; lra.
+by apply:ex_derive_continuous; auto_derive; lra.
 Qed.
 
 Lemma Rint_inv_x2 : 
@@ -376,7 +397,7 @@ apply: RInt_Derive => x Hx;
     rewrite Rmax_right in Hx; auto with real.
   rewrite /f; auto_derive.
   by apply: Sqrt_x2; apply: X_between.
-apply:  (continuity_pt_ext_loc (fun x => (4 * x) / (x ^ 2 - 2))).
+apply:  (continuous_ext_loc _ (fun x => (4 * x) / (x ^ 2 - 2))).
   exists (mkposreal _ Sqrt2_m1) => z Hz.
   rewrite /=  in Hz.
   rewrite Derive_ln_x2 //.
@@ -394,19 +415,10 @@ by have := Pos_x2 x; lra.
 Qed.
 
 Lemma Continuity_4_inv_x2 x : 
-  continuity_pt (fun x0 : R => 4 / (x0 ^ 2 - 2 * x0 + 2)) x.
+  continuous (fun x0 : R => 4 / (x0 ^ 2 - 2 * x0 + 2)) x.
 Proof.
-apply: continuity_pt_div.
-- by apply: continuity_pt_const.
-- apply: continuity_pt_plus; last first.
-    by apply: continuity_pt_const.
-  apply: continuity_pt_minus; last first.
-    apply: continuity_pt_mult.
-      by apply: continuity_pt_const.
-    by apply: continuity_pt_id.
-  repeat apply: continuity_pt_mult; try apply: continuity_pt_id.
-  by apply: continuity_pt_const.
-by move=> H; have := Pos_x2 x; rewrite H => H1; contradict H1; auto with real.
+apply:ex_derive_continuous; auto_derive.
+by have := Pos_x2 x;tlra.
 Qed.
 
 Lemma Rint_4x2 : RInt (fun x => 4 / (x ^ 2 - 2 * x + 2)) 0 1 = PI.
@@ -419,7 +431,7 @@ have ->: PI = f 1 - f 0.
   by rewrite /f Rminus_eq_0 atan_0 Rminus_0_l atan_opp atan_1; lra.
 apply: RInt_Derive => x _.
   by rewrite /f; auto_derive.
-apply:  (continuity_pt_ext (fun x => 4 / (x ^ 2 - 2 * x + 2))).
+apply:  (continuous_ext (fun x => 4 / (x ^ 2 - 2 * x + 2))).
  by move=> z; rewrite Derive_4atan.
 exact: Continuity_4_inv_x2.
 Qed.
@@ -458,12 +470,12 @@ pose h y := (4 - 4 * y) / (y ^ 2 - 2 * y + 2)
   have := Pos_x2 x; lra.
 rewrite /h !RInt_plus.
 - by rewrite Rint_x2 Rint_4x2 Rint_inv_x2; lra.
-- by apply: ex_RInt_cont => x _; exact: Continuity_x2.
-- by apply: ex_RInt_cont => x _; exact: Continuity_4_inv_x2.
+- by apply: ex_RInt_continuous => x _; exact: Continuity_x2.
+- by apply: ex_RInt_continuous => x _; exact: Continuity_4_inv_x2.
 - apply: ex_RInt_plus.
-    by apply: ex_RInt_cont => x _; exact: Continuity_x2.
-  by apply: ex_RInt_cont => x _; exact: Continuity_4_inv_x2.
-apply: ex_RInt_cont => x Hx.
+    by apply: ex_RInt_continuous => x _; exact: Continuity_x2.
+  by apply: ex_RInt_continuous => x _; exact: Continuity_4_inv_x2.
+apply: ex_RInt_continuous => x Hx.
 rewrite !(Rmin_left, Rmax_right) in Hx; tlra.
 by apply: Continuity_inv_x2.
 Qed.
@@ -476,11 +488,8 @@ have pK k x : continuity_pt (fun x : R => x ^ k) x.
   apply: continuity_pt_mult => //.
   by apply: continuity_pt_id.
 apply: ex_RInt_scal.
-apply: ex_RInt_cont=> x Hx.
-apply: continuity_pt_mult => //.
-apply:continuity_pt_inv.  
-  apply: continuity_pt_minus => //.
-  by apply: continuity_pt_const.
+apply: ex_RInt_continuous=> x Hx.
+apply: continuous_mult; apply:ex_derive_continuous; auto_derive=>//.
 suff : 0 < 1 - x ^ 8 by lra.
 have sqrtp:= Rlt_sqrt2_0.
 have sqrtip: (0 < / (sqrt 2)) by apply: (Rinv_0_lt_compat (sqrt 2) sqrtp).
