@@ -1,4 +1,6 @@
-Require Import ssreflect NPeano Psatz Reals Coquelicot.
+From mathcomp Require Import ssreflect.
+Require Import NPeano Psatz Reals.
+From Coquelicot Require Import Coquelicot.
 
 (******************************************************************************)
 (*                                                                            *)
@@ -90,10 +92,6 @@ Proof.
 by move=> kpos; rewrite !sum_n_Reals sum_f_R0_holes.
 Qed.
 
-
-
-
-  
 Lemma fill_holes : forall k a x, (k <> 0)%nat ->
   ex_pseries a (x ^ k)->
   PSeries (hole k a) x = Series (fun n => a n * x ^ (k * n)).
@@ -107,7 +105,7 @@ rewrite -(Lim_seq_subseq (sum_n _) (fun n => k * n)%nat).
 case: exs => l il.
 exists l; move => eps Heps.
 case (il eps Heps) => // N Pn; exists (k * N)%nat => n nN.
-rewrite [n](div_mod _ _ kn0).
+rewrite [n](Nat.div_mod _ _ kn0).
 set trm := (fun _ =>  _).
 case: (eq_nat_dec (n mod k) 0) => [->|Dk].
   rewrite plus_0_r sum_n_holes //.
@@ -287,13 +285,13 @@ case Nat.eqb_spec => e; last first.
   have -> : (n + 1 + i = S (n + i))%nat by lia.
   rewrite /PS_Int PS_incr_n_simplify.
   have->: (n + i - (S n - 1) = i)%nat by lia.
-  rewrite /Nat.eqb (iffRL (beq_nat_false_iff _ _) e).
+  case: Nat.eqb_spec => // _.
   by case: le_lt_dec; Rcotpatch; rewrite /= /Rdiv Rmult_0_l Rmult_0_r.
 rewrite /PS_scal.
 rewrite (_ : PS_decr_n _ _ _ = /(i + n + 1)%:R).
   suff -> : (8 * (i / 8) +  S n = i + n + 1)%nat.
     rewrite /= Rmult_comm /= pow_add pow_1; Rcotpatch; lra.
-  by rewrite {2}(div_mod i 8); lia.
+  by rewrite {2}(Nat.div_mod i 8); lia.
 rewrite /PS_decr_n.
 have -> : (n + 1 + i = S (n + i))%nat by lia.
 rewrite /PS_Int PS_incr_n_simplify.

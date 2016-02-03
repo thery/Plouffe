@@ -1,4 +1,7 @@
-Require Import ssreflect NPeano ZArith Coquelicot Reals Field Psatz Plouffe.
+From mathcomp Require Import ssreflect.
+Require Import NPeano ZArith.
+From Coquelicot Require Import Coquelicot.
+Require Import Reals Field Psatz Plouffe.
 Require Export String.
 
 (******************************************************************************)
@@ -98,7 +101,7 @@ Lemma pow_Zpower a b :
 Proof.
 rewrite -Zpower_nat_Z.
 elim: b => //= n IH.
-by rewrite Zpower_nat_succ_r -IH Nat2Z.inj_mul.
+by rewrite -IH Nat2Z.inj_mul.
 Qed.
 
 
@@ -140,11 +143,11 @@ split.
   apply: Rmult_le_pos; tlra.
   suff: (a / b * b) %:R <= a%:R by lra.
   apply: le_INR.
-  rewrite mult_comm {2}(div_mod a b); lia.
+  rewrite mult_comm {2}(Nat.div_mod a b); lia.
 apply: Rmult_lt_compat_l; tlra.
 suff: a%:R < (a / b * b + b) %:R by rewrite plus_INR; lra.
 apply: lt_INR.
-rewrite {1}(div_mod a b); tlia.
+rewrite {1}(Nat.div_mod a b); tlia.
 rewrite mult_comm.
 suff :  (a mod b < b)%nat by lia.
 apply: Nat.mod_upper_bound; lia.
@@ -242,7 +245,7 @@ rewrite Z2Nat.inj_mul; tlia; last first.
 rewrite Nat2Z.id -pow_INR Int_part_INR; tlia.
 rewrite (_ : (b ^ (k + n) = b ^ n * b ^ k)%nat) //; last first.
   by rewrite Nat.pow_add_r mult_comm.
-rewrite mult_assoc Ndiv_minus //.
+rewrite Nat.mul_assoc Ndiv_minus //.
 rewrite mult_INR -Rmult_assoc.
 rewrite -(Int_part_INR (Rabs r) (b ^ n)) //.
 rewrite -[X in (_ = X - _)%nat]Nat2Z.id.
@@ -310,7 +313,7 @@ Definition NpowerMod a b m := (a ^ b) mod m.
 Lemma NpowerModE a b : 0 < m -> 
  exists u, a ^ b = u * m + NpowerMod a b m.
 Proof.
-by exists (a ^ b / m); rewrite Mult.mult_comm; apply: div_mod; lia.
+by exists (a ^ b / m); rewrite Mult.mult_comm; apply: Nat.div_mod; lia.
 Qed.
 
 End power.
@@ -349,7 +352,7 @@ have : x < pS.
   apply: mult_lt_compat_r; tlia .
   by apply: Nat.mod_upper_bound; tlia.
 case E : (_ <? _); tlia.
-by move: E; rewrite ltb_lt; lia.
+by move: E; rewrite Nat.ltb_lt; lia.
 Qed.
 
 Lemma base_sum_approxL j k (v := 8 * k + j) (po := NpowerMod 16 (d - 1 - k) v) :
@@ -381,10 +384,11 @@ have ->: (2 ^ p = pS %:R)%R.
   by rewrite /pS; rewrite pow_INR /=; lra.
 by rewrite -Rmult_assoc -mult_INR -/po; lra.
 Qed.
-   
+
+Notation nat_iter n A f x := (nat_rect (fun _ => A) x (fun _ => f) n).
 (* Compute \sum_{i = 0 to d - 1} (16^(d - 1 - i)) * 2^p / (8 * i + j) *)
 Definition NiterL j :=
-   nat_iter d (NiterF j) (NStateF 0 0).
+   nat_iter d _ (NiterF j) (NStateF 0 0).
 
 Lemma NiterL_mod j : 0 < j ->
   let (k1, s1) := NiterL j in s1 < pS.
@@ -394,7 +398,7 @@ have F : 0 < pS.
   suff: 1 <= pS by lia.
   by apply: (Nat.pow_le_mono_r 2 0 p); lia.
 elim: d => //= n.
-case: (nat_iter _ _) => k s sLp.
+case: (nat_iter _ _  _ _) => k s sLp.
 by apply: NiterF_mod.
 Qed.
 
@@ -405,7 +409,7 @@ Lemma sumLE j : 0 < j -> 0 < d ->
 Proof.
 move=> Pj; rewrite /NiterL.
 have F n m s :
-     exists s1, nat_iter n (NiterF j) (NStateF m s) = (NStateF (m + n) s1).
+     exists s1, nat_iter n _ (NiterF j) (NStateF m s) = (NStateF (m + n) s1).
   elim: n  => //= [|n [s1->]]; first by exists s; congr NStateF; lia.
   by rewrite Nat.add_succ_r; eexists; refine (refl_equal _).
 rewrite /NiterL.
@@ -415,17 +419,17 @@ elim: {-2}d (Nat.le_refl d) => // [dP dV| [|n] IH nLd _].
   suff ->: pS * NpowerMod 16 (d - 1 - 0) j / j <? pS = true.
     rewrite {-1 4}(_ : j = 8 * 0 + j); tlia.
     by apply:  base_sum_approxL; lia.
-  rewrite ltb_lt; apply: Nat.div_lt_upper_bound; tlia.
+  rewrite Nat.ltb_lt; apply: Nat.div_lt_upper_bound; tlia.
   rewrite mult_comm; apply: mult_lt_compat_r.
     by apply: Nat.mod_upper_bound; lia.
-  suff : 1 ^ 0 <= pS by rewrite pow_0_r; lia.
+  suff : 1 ^ 0 <= pS by rewrite Nat.pow_0_r; lia.
   by apply: Nat.pow_le_mono; lia.
 have F1 : S n <= d by lia.
 have F2 : 0 < S n by lia.
-rewrite (nat_iter_plus 1 (S n)).
+rewrite (nat_rect_plus 1 (S n)).
 have {IH} := IH F1 F2.
 have {F}[s->]:= F (S n) 0 0 => [[u]].
-rewrite /nat_iter.
+rewrite nat_rect_succ_r /nat_rect.
 change (0 + S n) with (S n).
 replace  (S n - 1) with n by lia.
 replace  (S (S n - 1)) with (S n) by lia.
@@ -471,7 +475,7 @@ Definition NiterG (j : nat) (st : NstateG) :=
 
 (* Compute \sum_{i = d to infinity} (16^(d - 1 - i)) / (8 * i + j) *)
 Definition NiterR j :=
-  nat_iter (p / 4) (NiterG j) (NStateG d (pS / 16) 0).
+  nat_iter (p / 4) _ (NiterG j) (NStateG d (pS / 16) 0).
 
 Lemma sumRE j : 0 < j -> 0 < p / 4 ->
   let (_,_, s1) := NiterR j in 
@@ -479,12 +483,12 @@ Lemma sumRE j : 0 < j -> 0 < p / 4 ->
 Proof.
 move=> Pj.
 have F n m k s :
-     exists s1, nat_iter n (NiterG j) (NStateG m (pS / (16 ^ k)) s)
+     exists s1, nat_iter n _ (NiterG j) (NStateG m (pS / (16 ^ k)) s)
                               = (NStateG (m + n)(pS / (16 ^ (k + n))) s1).
   elim: n  => //= [|n [s1->]].
     by exists s; congr NStateG; rewrite ?plus_0_r; tlia.
   rewrite !Nat.add_succ_r.
-  rewrite pow_succ_r; tlia.
+  rewrite Nat.pow_succ_r; tlia.
   have F : 16 ^ 0 <= 16 ^(k + n) by apply: Nat.pow_le_mono_r; lia.
   rewrite Nat.pow_0_r in F; tlia. 
   rewrite mult_comm -Nat.div_div; tlia.
@@ -515,17 +519,17 @@ have G i :
 rewrite /NiterR.
 elim: (p/4) => [H|[|n] IH _].
 - contradict H; lia.
-- rewrite /nat_iter /NiterG.
+- rewrite nat_rect_succ_r /nat_rec /NiterG.
   change (1 - 1) with 0.
   rewrite /sum_f_R0 plus_0_l.
   change 16 with (16 ^(1 + 0)).
   by rewrite (_ : 8 * d = 8 * (d + 0)); tlia.
-rewrite (nat_iter_plus 1 (S n)).
+rewrite (nat_rect_plus 1 (S n)).
 have F1 : 0 < S n by lia.
 have {IH} := IH F1.
 have := F (S n) d 1 0.
 rewrite Nat.pow_1_r => [[s ->]]. 
-rewrite /nat_iter.
+rewrite nat_rect_succ_r /nat_rect.
 replace  (S n - 1) with n by lia.
 replace  (S (S n) - 1) with (S n) by lia.
 rewrite /NiterG.
@@ -544,7 +548,7 @@ Lemma NiterR_mod j : 0 < j ->
 Proof.
 move=> Pj.
 case: (lt_dec 0 (p / 4))=> Pp; last first.
-  rewrite /NiterR /nat_iter; replace (p / 4) with 0; tlia. 
+  rewrite /NiterR /nat_rect; replace (p / 4) with 0; tlia. 
   by rewrite mult_0_r.
 have F0 : (0 < 16 ^ d)%R by apply: pow_lt; lra. 
 have F1 k N :
@@ -627,7 +631,7 @@ move => Pj; split.
   suff <-: Series (fun i => (0 * 0)%R) = 0%R.
     apply: Series_le => [n|]; last first.
       apply: (ex_series_ext (fun k : nat => f j ((d + p / 4) + k))).
-        by move=> n; rewrite plus_assoc.
+        by move=> n; rewrite Plus.plus_assoc.
       by rewrite -ex_series_incr_n; apply: ex_series_f.
     split; tlra.
     rewrite Rmult_0_l.
@@ -656,7 +660,7 @@ apply: Rle_lt_trans (Series_le _ f1 _ _) _.
     apply: Rle_Rinv; first by apply: pow_lt; lra.
       apply: Rmult_lt_0_compat; first by apply: pow_lt; lra.
       by apply: (lt_INR 0); lia.
-    rewrite -plus_assoc -[X in (X <= _)%R]Rmult_1_r.
+    rewrite -Plus.plus_assoc -[X in (X <= _)%R]Rmult_1_r.
     apply: Rmult_le_compat_l; first by apply: pow_le; lra.
     by apply: (le_INR 1); lia.
   - suff: (0 < 16 ^ (d + p / 4))%R by lra.
@@ -687,7 +691,7 @@ rewrite Rcomplements.Rlt_div_l.
   replace 16%R with (2 ^ 4)%R by ring.
   rewrite -pow_mult.
   apply: Rlt_pow; tlra.
-  rewrite {1}(div_mod p 4); tlia.
+  rewrite {1}(Nat.div_mod p 4); tlia.
   suff : p mod 4 < 4 by lia.
   by apply: Nat.mod_upper_bound; lia.
 apply: Rmult_lt_0_compat; tlra.
@@ -720,7 +724,7 @@ case: (lt_dec 0 d) => Pd.
     by lra.
   have := series_bound _ Pj.
   rewrite /NiterR; replace (p / 4) with 0 by lia.
-  rewrite /nat_iter /=.
+  rewrite /nat_rect /=.
   rewrite !plus_INR.
   change (2%:R)%R with 2%R.
   change (0%:R)%R with 0%R.
@@ -733,7 +737,7 @@ case: (lt_dec 0 (p / 4)) => Pp.
   rewrite /NiterL.
   have := series_bound _ Pj.
   replace d with 0 by lia.
-  rewrite /nat_iter /=.
+  rewrite /nat_rect /=.
   case: NiterR => _ _ s2.
   rewrite !plus_INR.
   change (2%:R)%R with 2%R.
@@ -745,7 +749,7 @@ have := series_bound _ Pj.
 rewrite /NiterL /NiterR.
 replace d with 0 by lia.
 replace (p / 4) with 0 by lia.
-rewrite /nat_iter /=.
+rewrite /nat_rect /=.
 set xxx := Series _.
 lra.
 Qed.
@@ -936,9 +940,9 @@ Lemma NpiDigit_correct k :
   NpiDigit = Some k -> Rdigit 16 d PI = k.
 Proof.
 rewrite /NpiDigit.
-case E1 : ltb => //.
+case E1 : Nat.ltb => //.
 move: E1; rewrite Nat.ltb_lt => E1.
-case E2 : ltb => //.
+case E2 : Nat.ltb => //.
 move: E2; rewrite Nat.ltb_lt => E2.
 case: Nat.eqb_spec => // E3 [<-].
 by apply: main_thm.
@@ -1055,11 +1059,11 @@ Lemma specN_cmp m n : m <? n = ([[m]] <? [[n]])%nat.
 Proof.
 rewrite BigN.spec_ltb.
 case E : (_ <? _)%nat.
-  move: E; rewrite ltb_lt -Z2Nat.inj_lt; try by apply: BigN.spec_pos.
+  move: E; rewrite Nat.ltb_lt -Z2Nat.inj_lt; try by apply: BigN.spec_pos.
   by rewrite -Zlt_is_lt_bool.
 have : ~ ([m] < [n])%Z.
   rewrite Z2Nat.inj_lt; try by apply: BigN.spec_pos.
-  by rewrite -ltb_lt E.
+  by rewrite -Nat.ltb_lt E.
 by rewrite Zlt_is_lt_bool; case: (_ <? _)%Z.
 Qed.
 
@@ -1159,11 +1163,11 @@ move=> mP; elim: b a c => // [b1 IH a c|b1 IH a c|a c]; last first.
   congr (_ ^ _ mod _)%nat.
   by rewrite specN_mul /=; lia.
 rewrite IH Pos2Nat.inj_xI.
-rewrite pow_succ_r; tlia.
+rewrite Nat.pow_succ_r; tlia.
 rewrite Nat.pow_mul_r.
 rewrite !specN_mod //.
 rewrite Nat.mul_mod_idemp_r; tlia.
-rewrite !specN_mul // mult_assoc.
+rewrite !specN_mul // Mult.mult_assoc.
 rewrite -[X in X = _]Nat.mul_mod_idemp_l; tlia.
 rewrite -[X in _ = X]Nat.mul_mod_idemp_l; tlia.
 congr (_ * _ mod _)%nat.
@@ -1188,12 +1192,12 @@ move=> Pm.
 case: b => [|b ] /=.
   rewrite specN_cmp.
   case E : (_ <? _)%nat.
-    move: E; rewrite ltb_lt.
+    move: E; rewrite Nat.ltb_lt.
     have ->: [[2]] = 2%nat by [].
     by case: [[_]] Pm => //= [] [|n]; lia.
   rewrite Nat.mod_small //.
   suff : ~([[m]] < 2)%nat by lia.
-  by rewrite -ltb_lt; case: (_ <? _)%nat E.
+  by rewrite -Nat.ltb_lt; case: (_ <? _)%nat E.
 rewrite specN_powerModc; tlia.
 by rewrite mult_1_r.
 Qed.
@@ -1229,8 +1233,8 @@ move=> k2 s2 k1 l1 s1 [<- [k1E <-] ].
 have F : (0 < [[8]] * [[k1]] + [[j]])%nat.
   set x := (_ * _)%nat; lia.
 repeat split.
-- by rewrite specN_add /= plus_comm.
-- by rewrite -k1E Nnat.N2Nat.inj_add plus_comm.
+- by rewrite specN_add /= Plus.plus_comm.
+- by rewrite -k1E Nnat.N2Nat.inj_add Plus.plus_comm.
 rewrite !(specN_if_cmp, specN_add, specN_sub, specN_mul, 
           specN_div, specN_shiftl, specN_powerMod) //.
 have ->: [[16]] = 16%nat by [].
@@ -1250,8 +1254,9 @@ Lemma specN_iterL j : (0 < [[j]])%nat ->
   eq_StateF (iterL j) (NiterL (N.to_nat p) (N.to_nat d) [[j]]).
 Proof.
 move=> Pj.
-rewrite /iterL /NiterL -{1}[d]Nnat.N2Nat.id -Nnat.Nat2N.inj_iter.
-elim: {1 2}N.to_nat => //= n IH.
+rewrite /iterL /NiterL.
+rewrite -{1}[d]Nnat.N2Nat.id -Nnat.Nat2N.inj_iter.
+elim: {1 3}N.to_nat => //= n IH.
 by apply: specN_iterF.
 Qed.
 
@@ -1280,8 +1285,8 @@ case: s1; case: s2.
 rewrite /NiterG /iterG. 
 move=> k2 d2 n2 k1 l1 d1 n1 [<- [k1E [<- <-] ] ].
 repeat split.
-- by rewrite specN_add /= plus_comm.
-- by rewrite -k1E Nnat.N2Nat.inj_add plus_comm.
+- by rewrite specN_add /= Plus.plus_comm.
+- by rewrite -k1E Nnat.N2Nat.inj_add Plus.plus_comm.
 - by rewrite specN_shiftr.
 rewrite !(specN_if_cmp, specN_add, specN_sub, specN_mul, 
           specN_div, specN_shiftl, specN_powerMod) //.
