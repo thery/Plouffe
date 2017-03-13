@@ -203,6 +203,7 @@ apply: Rmult_lt_compat_r; first by apply: (lt_INR 0).
 by have [] := base_fp b.
 Qed.
 
+
 Definition Rdigit (b : nat) (d : nat) (r : R) :=
    (Z.to_nat (Int_part ((Rabs r) * (b%:R ^ d))) mod b)%nat.
 
@@ -318,10 +319,10 @@ Qed.
 
 End power.
 
-Let f j i := (((16 ^ d / 16) * 2 ^ p) / (16 ^ i * (8 * i + j)%:R))%R.
-Let g j i := (/ (16 ^ i * (8 * i + j)%:R))%R.
+Let f k i := (((16 ^ d / 16) * 2 ^ p) / (16 ^ i * (8 * i + k)%:R))%R.
+Let g k i := (/ (16 ^ i * (8 * i + k)%:R))%R.
 
-Lemma fgE j : (Series (f j) = (16 ^ d / 16) * 2 ^ p * Series (g j))%R.
+Lemma fgE k : (Series (f k) = (16 ^ d / 16) * 2 ^ p * Series (g k))%R.
 Proof. by exact: Series_scal_l. Qed.
 
 Lemma PigE : ((16 ^ d / 16) * 2 ^ p * PI = 
@@ -330,19 +331,19 @@ Lemma PigE : ((16 ^ d / 16) * 2 ^ p * PI =
 Proof. by rewrite Plouffe_PI !fgE /g; lra. Qed.
 
 (* Iterative state : counter kN = k and result *) 
-Inductive NstateF := NStateF (k : nat) (s : nat).
+Inductive NstateF := NStateF (i : nat) (res : nat).
 
-(* Un pas : k = k + 1, kN = kN + 1,
-            s = s + (16^(d - 1 - k)) * 2^p / (8 * k + j) *)
-Definition NiterF (j : nat) (st : NstateF) :=
-  let (k, s) := st in
-  let r := 8 * k + j in
-  let s := s + (pS * (NpowerMod 16 (d - 1 - k) r)) / r in
-  let s := if s <? pS then s else s - pS in
-  NStateF (S k) s.
+(* Un pas : i = i + 1
+            res = ress + (16^(d - 1 - k)) * 2^p / (8 * k + j) *)
+Definition NiterF (k : nat) (st : NstateF) :=
+  let: NStateF i res := st in
+  let r := 8 * i + k in
+  let res := res + (pS * (NpowerMod 16 (d - 1 - i) r)) / r in
+  let res := if res <? pS then res else res - pS in
+  NStateF (S i) res.
 
-Lemma NiterF_mod j k s : 0 < j ->
-  let (k1, s1) := NiterF j (NStateF k s) in s < pS -> s1 < pS.
+Lemma NiterF_mod k i res : 0 < k ->
+  let (_, res1) := NiterF k (NStateF i res) in res < pS -> res1 < pS.
 Proof.
 rewrite /NiterF => Pj sLpS.
 set x := _ / _.
@@ -355,21 +356,21 @@ case E : (_ <? _); tlia.
 by move: E; rewrite Nat.ltb_lt; lia.
 Qed.
 
-Lemma base_sum_approxL j k (v := 8 * k + j) (po := NpowerMod 16 (d - 1 - k) v) :
- 0 < j -> k < d -> 
-   exists u, (0 <= f j k - (pS * po / v)%:R - u%:R * 2 ^ p < 1)%R.
+Lemma base_sum_approxL k i (v := 8 * i + k) (po := NpowerMod 16 (d - 1 - i) v) :
+ 0 < k -> i < d -> 
+   exists u, (0 <= f k i - (pS * po / v)%:R - u%:R * 2 ^ p < 1)%R.
 Proof.
-move=> Pj kLd.
+move=> Pj iLd.
 have Pv : 0 < v by rewrite /v; lia.
-have [u1 Hu1] := NpowerModE _ 16 (d - 1 - k) Pv.
+have [u1 Hu1] := NpowerModE _ 16 (d - 1 - i) Pv.
 have F1 := approx_divR (pS * po) v Pv.
 have F2 : (0 < v%:R)%R by apply: (lt_INR 0).
-have F3 : (0 < 16 ^ k)%R by apply: pow_lt; lra.
-have ->: f j k = ((2 ^ p * 16 ^ (d - 1 - k))%:R / v%:R)%R.
+have F3 : (0 < 16 ^ i)%R by apply: pow_lt; lra.
+have ->: f k i = ((2 ^ p * 16 ^ (d - 1 - i))%:R / v%:R)%R.
   rewrite /f -/v mult_INR !pow_INR.
   have->: (2%:R = 2)%R by rewrite /=; lra.
   have->: (16%:R = 16)%R by rewrite /=; lra.
-  have {1}->: d = (d - 1 - k) + k + 1 by lia.
+  have {1}->: d = (d - 1 - i) + i + 1 by lia.
   rewrite !pow_add; field; lra.
 exists u1.
 rewrite Hu1 mult_plus_distr_l plus_INR.
@@ -386,12 +387,13 @@ by rewrite -Rmult_assoc -mult_INR -/po; lra.
 Qed.
 
 Notation nat_iter n A f x := (nat_rect (fun _ => A) x (fun _ => f) n).
-(* Compute \sum_{i = 0 to d - 1} (16^(d - 1 - i)) * 2^p / (8 * i + j) *)
-Definition NiterL j :=
-   nat_iter d _ (NiterF j) (NStateF 0 0).
+
+(* Compute \sum_{i = 0 to d - 1} (16^(d - 1 - i)) * 2^p / (8 * i + k) *)
+Definition NiterL k :=
+   nat_iter d _ (NiterF k) (NStateF 0 0).
 
 Lemma NiterL_mod j : 0 < j ->
-  let (k1, s1) := NiterL j in s1 < pS.
+  let: NStateF _ s1 := NiterL j in s1 < pS.
 Proof.
 rewrite /NiterL => Pj.
 have F : 0 < pS.
@@ -402,22 +404,22 @@ case: (nat_iter _ _  _ _) => k s sLp.
 by apply: NiterF_mod.
 Qed.
 
-Lemma sumLE j : 0 < j -> 0 < d ->
-  let (k1, s1) := NiterL j in 
-  exists u1, 
-  (0 <= sum_f_R0 (f j) (d - 1) - s1%:R - u1%:R * 2 ^ p < d%:R)%R.
+Lemma sumLE k : 0 < k -> 0 < d ->
+  let: NStateF _ res := NiterL k in 
+  exists u, 
+  (0 <= sum_f_R0 (f k) (d - 1) - res%:R - u%:R * 2 ^ p < d%:R)%R.
 Proof.
-move=> Pj; rewrite /NiterL.
+move=> Pk; rewrite /NiterL.
 have F n m s :
-     exists s1, nat_iter n _ (NiterF j) (NStateF m s) = (NStateF (m + n) s1).
+     exists s1, nat_iter n _ (NiterF k) (NStateF m s) = (NStateF (m + n) s1).
   elim: n  => //= [|n [s1->]]; first by exists s; congr NStateF; lia.
   by rewrite Nat.add_succ_r; eexists; refine (refl_equal _).
 rewrite /NiterL.
 elim: {-2}d (Nat.le_refl d) => // [dP dV| [|n] IH nLd _].
 - by contradict dV; lia.
 - rewrite /=.
-  suff ->: pS * NpowerMod 16 (d - 1 - 0) j / j <? pS = true.
-    rewrite {-1 4}(_ : j = 8 * 0 + j); tlia.
+  suff ->: pS * NpowerMod 16 (d - 1 - 0) k / k <? pS = true.
+    rewrite {-1 4}(_ : k = 8 * 0 + k); tlia.
     by apply:  base_sum_approxL; lia.
   rewrite Nat.ltb_lt; apply: Nat.div_lt_upper_bound; tlia.
   rewrite mult_comm; apply: mult_lt_compat_r.
@@ -436,13 +438,13 @@ replace  (S (S n - 1)) with (S n) by lia.
 replace  (S (S n) - 1) with (S n) by lia.
 rewrite /NiterF.
 set sum := sum_f_R0 _ _.
-set v := 8 * S n + j.
+set v := 8 * S n + k.
 set po := NpowerMod _ _ _.
-have [u1 Hu1] := base_sum_approxL j (S n) Pj nLd.
+have [u1 Hu1] := base_sum_approxL k (S n) Pk nLd.
 rewrite -/po -/v in Hu1 => Hu.
 have F3 :
    (0 <=
-          sum + f j (S n) - (s + pS * po / v) %:R - 
+          sum + f k (S n) - (s + pS * po / v) %:R - 
                       (u %:R * 2 ^ p + u1 %:R * 2 ^ p) < (S (S n)) %:R)%R.
   have ->: forall a b c d e f, (((a + b - (c + d)%:R) - (e + f)) = 
                              (a - c%:R - e + (b - f - d%:R)))%R.
@@ -462,49 +464,49 @@ have ->: (pS%:R = 2 ^ p)%R by rewrite pow_INR /=.
 by lra.
 Qed.
 
-(* Iterative state : counter kN = k shift d and result *) 
-Inductive NstateG := NStateG (k : nat) (d : nat) (t : nat).
+(* Iterative state : counter kN = index shift and result *) 
+Inductive NstateG := NStateG (i : nat) (s : nat) (res : nat).
 
-(* Un pas : kN = kN + 1, k = k + 1, d = d / 16,
-            t = t + (d/(8 * k + j)) *)
-Definition NiterG (j : nat) (st : NstateG) :=
-  let (k, d, t) := st in
-  let r := 8 * k + j in
-  let t := t + (d / r) in
-  NStateG (S k) (d / 16) t.
+(* Un pas : i = i + 1, s = s / 16,
+            res = res + (d / (8 * i + k)) *)
+Definition NiterG (k : nat) (st : NstateG) :=
+  let: NStateG i s res := st in
+  let r := 8 * i + k in
+  let res := res + (s / r) in
+  NStateG (S i) (s / 16) res.
 
 (* Compute \sum_{i = d to infinity} (16^(d - 1 - i)) / (8 * i + j) *)
-Definition NiterR j :=
-  nat_iter (p / 4) _ (NiterG j) (NStateG d (pS / 16) 0).
+Definition NiterR k :=
+  nat_iter (p / 4) _ (NiterG k) (NStateG d (pS / 16) 0).
 
-Lemma sumRE j : 0 < j -> 0 < p / 4 ->
-  let (_,_, s1) := NiterR j in 
-  (0 <= sum_f_R0 (fun i => (f j (d + i))) (p / 4 - 1) - s1%:R < (p / 4)%:R)%R.
+Lemma sumRE k : 0 < k -> 0 < p / 4 ->
+  let (_,_, s1) := NiterR k in 
+  (0 <= sum_f_R0 (fun i => (f k (d + i))) (p / 4 - 1) - s1%:R < (p / 4)%:R)%R.
 Proof.
-move=> Pj.
-have F n m k s :
-     exists s1, nat_iter n _ (NiterG j) (NStateG m (pS / (16 ^ k)) s)
-                              = (NStateG (m + n)(pS / (16 ^ (k + n))) s1).
+move=> Pk.
+have F n m i s :
+     exists s1, nat_iter n _ (NiterG k) (NStateG m (pS / (16 ^ i)) s)
+                              = (NStateG (m + n)(pS / (16 ^ (i + n))) s1).
   elim: n  => //= [|n [s1->]].
     by exists s; congr NStateG; rewrite ?plus_0_r; tlia.
   rewrite !Nat.add_succ_r.
   rewrite Nat.pow_succ_r; tlia.
-  have F : 16 ^ 0 <= 16 ^(k + n) by apply: Nat.pow_le_mono_r; lia.
+  have F : 16 ^ 0 <= 16 ^(i + n) by apply: Nat.pow_le_mono_r; lia.
   rewrite Nat.pow_0_r in F; tlia. 
   rewrite mult_comm -Nat.div_div; tlia.
   by eexists; refine (refl_equal _).
-have G i : 
-    (0 <= f j (d + i) - (pS / 16 ^ (1 + i) / (8 * (d + i) + j)) %:R < 1 %:R)%R.
-  have F2 k : 0 < 16 ^ k.
-    have : 16 ^ 0 <= 16 ^ k by apply: Nat.pow_le_mono_r; lia.
+have G j : 
+    (0 <= f k (d + j) - (pS / 16 ^ (1 + j) / (8 * (d + j) + k)) %:R < 1 %:R)%R.
+  have F2 j1 : 0 < 16 ^ j1.
+    have : 16 ^ 0 <= 16 ^ j1 by apply: Nat.pow_le_mono_r; lia.
     by rewrite Nat.pow_0_r; lia.
-  have F3 k : (0 < 16 ^ k)%R.
+  have F3 j1 : (0 < 16 ^ j1)%R.
     have<-: (16%:R = 16)%R by rewrite /=; lra.
     rewrite -(pow_INR 16).
     by apply: (lt_INR 0).
-  have F4 : 0 < (16 ^ (1 + i) * (8 * (d + i) + j)).
+  have F4 : 0 < (16 ^ (1 + j) * (8 * (d + j) + k)).
     by apply: Nat.mul_pos_pos; try apply: F2; tlia.
-  rewrite /f Nat.div_div; tlia; last by have := F2 (1 + i); lia.
+  rewrite /f Nat.div_div; tlia; last by have := F2 (1 + j); lia.
   have := approx_divR pS _ F4.
   rewrite /pS mult_INR !pow_INR.
   have->: (2%:R = 2)%R by rewrite /=; lra.
@@ -513,9 +515,9 @@ have G i :
   set v := (_ / _)%R.
   replace u with v; first by [].
   rewrite /v /u !pow_add pow_1; field; tlra.
-  have : (0 < (8 * (d + i) + j) %:R)%R.
+  have : (0 < (8 * (d + j) + k) %:R)%R.
     apply: (lt_INR 0); lia.
-  by have := F3 i; have := F3 d; lra. 
+  by have := F3 j; have := F3 d; lra. 
 rewrite /NiterR.
 elim: (p/4) => [H|[|n] IH _].
 - contradict H; lia.
@@ -534,7 +536,7 @@ replace  (S n - 1) with n by lia.
 replace  (S (S n) - 1) with (S n) by lia.
 rewrite /NiterG.
 set sum := sum_f_R0 _ _.
-set v := 8 * (d + S n) + j.
+set v := 8 * (d + S n) + k.
 rewrite /sum_f_R0 -/sum_f_R0 -/sum.
 have := G (S n).
 rewrite -/v.
@@ -543,26 +545,26 @@ change (1%:R)%R with 1%R.
 lra.
 Qed.
 
-Lemma NiterR_mod j : 0 < j ->
-  let (_,_, s) := NiterR j in 15 * s < pS.
+Lemma NiterR_mod k : 0 < k ->
+  let: NStateG _ _ res := NiterR k in 15 * res < pS.
 Proof.
-move=> Pj.
+move=> Pk.
 case: (lt_dec 0 (p / 4))=> Pp; last first.
   rewrite /NiterR /nat_rect; replace (p / 4) with 0; tlia. 
   by rewrite mult_0_r.
 have F0 : (0 < 16 ^ d)%R by apply: pow_lt; lra. 
-have F1 k N :
-       k <> 1%R ->
-       sum_f_R0 (fun i : nat => (k ^ i)%R) N = ((1 - k ^ S N) / (1 - k))%R.
+have F1 j N :
+       j <> 1%R ->
+       sum_f_R0 (fun i : nat => (j ^ i)%R) N = ((1 - j ^ S N) / (1 - j))%R.
   by move=> kD; elim: N => /= [|n ->]; field; lra. 
-have F2 N : (sum_f_R0 (fun i => (f j (d + i))) N <= 
+have F2 N : (sum_f_R0 (fun i => (f k (d + i))) N <= 
     (16 ^ d / 16 * 2 ^ p) * (1/16)^d *
          (sum_f_R0 (fun i : nat => ((1/16)^ i)%R) N))%R.
-  have F k : (f j (d + k) <= 16 ^ d / 16 * 2 ^ p * (1 / 16) ^ (d + k))%R.
-    have FF1 : (0 < 16 ^ (d + k))%R by apply: pow_lt; lra.  
-    have FF2 : (1 <= (8 * (d + k) + j)%:R)%R by apply: (le_INR 1); lia.
+  have F j : (f k (d + j) <= 16 ^ d / 16 * 2 ^ p * (1 / 16) ^ (d + j))%R.
+    have FF1 : (0 < 16 ^ (d + j))%R by apply: pow_lt; lra.  
+    have FF2 : (1 <= (8 * (d + j) + k)%:R)%R by apply: (le_INR 1); lia.
     rewrite /f  [((_ / _)^ _)%R]Rpow_mult_distr -Rinv_pow; tlra.
-    rewrite -{2}[(16 ^ (d + k))%R]Rmult_1_r.
+    rewrite -{2}[(16 ^ (d + j))%R]Rmult_1_r.
     rewrite pow1 Rmult_1_l /Rdiv !Rmult_assoc.
     rewrite ![(/(_ ^ _ * _))%R]Rinv_mult_distr; tlra.
     repeat apply: Rmult_le_compat_l; try by apply: pow_le; lra.
@@ -571,7 +573,7 @@ have F2 N : (sum_f_R0 (fun i => (f j (d + i))) N <=
     by apply: Rle_Rinv; lra.
   elim: N => /= [|n IH]; first by  have := F 0; rewrite plus_0_r; lra.
   by have := F (S n); rewrite Nat.add_succ_r /= pow_add; lra.
-have F3 N : (sum_f_R0 (fun i => (f j (d + i))) N < 2 ^ p / 15)%R.
+have F3 N : (sum_f_R0 (fun i => (f k (d + i))) N < 2 ^ p / 15)%R.
   apply: Rle_lt_trans (F2 _) _.
   rewrite F1; tlra.
   have-> : (16 ^ d / 16 * 2 ^ p * (1 / 16) ^ d = 2 ^ p / 16)%R.
@@ -584,7 +586,7 @@ have F3 N : (sum_f_R0 (fun i => (f j (d + i))) N < 2 ^ p / 15)%R.
   apply: Rmult_lt_compat_r; tlra.
   suff : (0 < (1/16) ^S N )%R by lra.
   apply: pow_lt; lra.
-have :=  sumRE _ Pj Pp; case: NiterR => _ _ s Hs.
+have :=  sumRE _ Pk Pp; case: NiterR => _ _ s Hs.
 apply: INR_lt.
 rewrite pow_INR mult_INR.
 have->: (15 %:R = 15)%R by rewrite /=; lra.
@@ -592,7 +594,7 @@ have->: (2 %:R = 2)%R by rewrite /=; lra.
 by have := F3 (p / 4 - 1); lra.
 Qed.
 
-Lemma ex_series_f j : 0 < j -> @ex_series R_AbsRing R_NormedModule (f j).
+Lemma ex_series_f k : 0 < k -> @ex_series R_AbsRing R_NormedModule (f k).
 Proof.
 move=> Pj; rewrite /f.
 assert (F : ex_series (fun i => (16 ^ d / 16 * 2 ^ p) * (1 / 16) ^ i)%R).
@@ -601,11 +603,11 @@ assert (F : ex_series (fun i => (16 ^ d / 16 * 2 ^ p) * (1 / 16) ^ i)%R).
   by split_Rabs; lra.
 apply: ex_series_le F => n.
 have F1 : (0 < 16 ^ n)%R by apply: pow_lt; lra.
-have F2 : (0 < (8 * n + j) %:R)%R   by apply: (lt_INR 0); lia.
+have F2 : (0 < (8 * n + k) %:R)%R   by apply: (lt_INR 0); lia.
 have H1: (0 <= 16 ^ d / 16 * 2 ^ p)%R.
   repeat (apply: Rcomplements.Rdiv_le_0_compat || apply: Rmult_le_pos);
     (try by apply: pow_le; lra); lra.
-apply:(Rle_trans _ (16 ^ d / 16 * 2 ^ p / (16 ^ n * (8 * n + j) %:R))); last first.
+apply:(Rle_trans _ (16 ^ d / 16 * 2 ^ p / (16 ^ n * (8 * n + k) %:R))); last first.
   apply: Rmult_le_compat_l.
     by apply H1.
 rewrite Rinv_mult_distr; tlra.
@@ -617,20 +619,20 @@ have ->: (1 = 1 / 1)%R by field.
 rewrite /Rdiv Rmult_1_l.
 apply: Rle_Rinv; tlra.
 by apply: (le_INR 1); lia.
-set gg := (16 ^ d / 16 * 2 ^ p / (16 ^ n * (8 * n + j) %:R))%R.
+set gg := (16 ^ d / 16 * 2 ^ p / (16 ^ n * (8 * n + k) %:R))%R.
   rewrite  /Hierarchy.norm /= /abs /= Rabs_right.
     by apply: Req_le. 
 apply: Rle_ge; apply: Rdiv_le_0_compat=>//.
 by apply:Rmult_lt_0_compat.
 Qed.
 
-Lemma series_bound j : 0 < j -> 
-  (0 <= Series (fun k : nat => f j (d + (p / 4 + k))) < 2)%R.
+Lemma series_bound k : 0 < k -> 
+  (0 <= Series (fun i : nat => f k (d + (p / 4 + i))) < 1)%R.
 Proof.
 move => Pj; split.
   suff <-: Series (fun i => (0 * 0)%R) = 0%R.
     apply: Series_le => [n|]; last first.
-      apply: (ex_series_ext (fun k : nat => f j ((d + p / 4) + k))).
+      apply: (ex_series_ext (fun i : nat => f k ((d + p / 4) + i))).
         by move=> n; rewrite Plus.plus_assoc.
       by rewrite -ex_series_incr_n; apply: ex_series_f.
     split; tlra.
@@ -679,73 +681,75 @@ have ->: x = ((16 ^ d * 2 ^ p * 16) / (15 * 16 ^ (d + p / 4 + 1)))%R.
   have : (0 < 16 ^ (p / 4))%R by apply: pow_lt; lra.
   have : (0 < 16 ^ d)%R by apply: pow_lt; lra.
   by lra.
-rewrite Rcomplements.Rlt_div_l.
-  have ->: (2 * (15 * 16 ^ (d + p / 4 + 1)) = 
-             16  ^ d * (16 ^ (p / 4 + 1)) * (2 * 15))%R.
-    by rewrite !pow_add; ring.
-  rewrite !Rmult_assoc.
-  apply: Rmult_lt_compat_l.
-    by apply: pow_lt; lra.
-  apply: Rmult_ge_0_gt_0_lt_compat; tlra.
-    by apply: pow_lt; lra.
-  replace 16%R with (2 ^ 4)%R by ring.
-  rewrite -pow_mult.
-  apply: Rlt_pow; tlra.
-  rewrite {1}(Nat.div_mod p 4); tlia.
-  suff : p mod 4 < 4 by lia.
-  by apply: Nat.mod_upper_bound; lia.
-apply: Rmult_lt_0_compat; tlra.
-by apply: pow_lt; lra.
+rewrite Rcomplements.Rlt_div_l; last first.
+  apply: Rmult_lt_0_compat; tlra.
+  by apply: pow_lt; lra.
+have ->: (1 * (15 * 16 ^ (d + p / 4 + 1)) = 
+             16  ^ d * (2 ^ (4 * (p / 4 + 1)) * 15))%R.
+  rewrite pow_mult (_ : (2 ^ 4 = 16)%R); last by ring.
+  by rewrite !pow_add; ring.
+rewrite !Rmult_assoc.
+apply: Rmult_lt_compat_l.
+  by apply: pow_lt; lra.
+apply: Rlt_le_trans (_ : (2 ^ (p + 1) *  15 <= _)%R).
+  rewrite pow_add Rmult_assoc.
+  apply: Rmult_lt_compat_l; last by lra.
+  by apply: pow_lt; lra.
+apply: Rmult_le_compat_r; tlra.
+apply: Rle_pow; tlra.
+rewrite {1}(NPeano.Nat.div_mod p 4); tlia.
+have := NPeano.Nat.mod_bound_pos p 4.
+by lia.
 Qed.
 
-Lemma bound j : 0 < j ->  
+Lemma bound k : 0 < k ->  
   exists u, 
-  let (_, s1) := NiterL j in
-  let (_, _, s2) := NiterR j in
-  (0 <= Series (f j) - s1%:R - s2%:R - u %:R * 2 ^ p  < (d + p / 4 + 2)%:R)%R.
+  let (_, res1) := NiterL k in
+  let (_, _, res2) := NiterR k in
+  (0 <= Series (f k) - res1%:R - res2%:R - u %:R * 2 ^ p  < (d + p / 4 + 1)%:R)%R.
 Proof.
-move=> Pj.
-have F := ex_series_f j Pj.
+move=> Pk.
+have F := ex_series_f _ Pk.
 case: (lt_dec 0 d) => Pd.
   rewrite (Series_incr_n _ d) //.
   replace (pred d) with (d - 1); tlia.
-  have := sumLE _ Pj Pd.
+  have := sumLE _ Pk Pd.
   case: NiterL => _ s1 [u Hs1]; exists u.
   case: (lt_dec 0 (p / 4)) => Pp.
     rewrite (Series_incr_n _ (p/4)) //; last first.
       by rewrite -ex_series_incr_n.
     replace (pred (p / 4)) with (p / 4 - 1); tlia.
-    have := sumRE _ Pj Pp.
+    have := sumRE _ Pk Pp.
     case: NiterR => _ _ s2.
     move: Hs1.
-    have := series_bound _ Pj.
+    have := series_bound _ Pk.
     rewrite !plus_INR.
-    change (2%:R)%R with 2%R.
+    change (1%:R)%R with 1%R.
     by lra.
-  have := series_bound _ Pj.
+  have := series_bound _ Pk.
   rewrite /NiterR; replace (p / 4) with 0 by lia.
   rewrite /nat_rect /=.
   rewrite !plus_INR.
-  change (2%:R)%R with 2%R.
+  change (1%:R)%R with 1%R.
   change (0%:R)%R with 0%R.
   by lra.
 exists 0.
 case: (lt_dec 0 (p / 4)) => Pp.
   rewrite (Series_incr_n _ (p/4)) //.
   replace (pred (p / 4)) with (p / 4 - 1); tlia.
-  have := sumRE _ Pj Pp.
+  have := sumRE _ Pk Pp.
   rewrite /NiterL.
-  have := series_bound _ Pj.
+  have := series_bound _ Pk.
   replace d with 0 by lia.
   rewrite /nat_rect /=.
   case: NiterR => _ _ s2.
   rewrite !plus_INR.
-  change (2%:R)%R with 2%R.
+  change (1%:R)%R with 1%R.
   change (0%:R)%R with 0%R.
   set xxx := Series _.
   set yyy := sum_f_R0 _ _.
   by lra.
-have := series_bound _ Pj.
+have := series_bound _ Pk.
 rewrite /NiterL /NiterR.
 replace d with 0 by lia.
 replace (p / 4) with 0 by lia.
@@ -755,22 +759,22 @@ lra.
 Qed.
 
 (* Compute \sum_{i = 0 to infinity} (16^(d - 1 - i)) / (8 * i + j) *)
-Definition NsumV j :=
-  let (_, s) := NiterL j in
-  let (_, _, t) := NiterR j in  s + t.
+Definition NsumV k :=
+  let: NStateF _ res1 := NiterL k in
+  let: NStateG _ _ res2 := NiterR k in res1 + res2.
 
-Lemma NsumV_mod j :  0 < j -> NsumV j < 2 * pS.
+Lemma NsumV_mod k :  0 < k -> NsumV k < 2 * pS.
 Proof.
-move=> Pj.
+move=> Pk.
 rewrite /NsumV.
-have := NiterL_mod j Pj.
-have := NiterR_mod j Pj.
+have := NiterL_mod _ Pk.
+have := NiterR_mod _ Pk.
 case: NiterL; case: NiterR => _ _ t _ s; lia.
 Qed.
   
-Lemma bound_NsumV j : 0 < j ->  
+Lemma bound_NsumV k : 0 < k ->  
   exists u, 
-  (0 <= Series (f j) - (NsumV j)%:R - u %:R * 2 ^ p  < (d + p / 4 + 2)%:R)%R.
+  (0 <= Series (f k) - (NsumV k)%:R - u %:R * 2 ^ p  < (d + p / 4 + 1)%:R)%R.
 Proof.
 move=> Pj.
 have [u] := bound _ Pj.
@@ -779,7 +783,7 @@ exists u; move : Hu.
 rewrite !plus_INR; lra.
 Qed.
 
-Lemma main_thm (delta := d + p / 4 + 2)
+Lemma main_thm (delta := d + p / 4 + 1)
           (X :=  (4 * Series (f 1) - 2 * Series (f 4) 
                        - Series (f 5) - Series (f 6))%R)
           (Y := (4 * (NsumV 1) + 
@@ -798,7 +802,7 @@ have FE : (4%:R = 4)%R by rewrite /=; lra.
 have TE : (2%:R = 2)%R by rewrite /=; lra.
 have NE : (9%:R = 9)%R by rewrite /=; lra.
 have PSE : (pS%:R = 2 ^ p)%R.
-  by rewrite pow_INR; have -> : (2%:R = 2)%R; rewrite /=; lra.
+  by rewrite pow_INR TE /=; lra.
 pose NNE := (FE, TE, NE, PSE).
 have F1 : (0 < 1)%nat by lia.
 have pS1 := NsumV_mod _ F1.
@@ -924,7 +928,7 @@ Qed.
 
 (* Extra the first digit from Plouffe formula *)
 Definition NpiDigit :=
-  let delta := d + p / 4 + 2 in
+  let delta := d + p / 4 + 1 in
   if (3 <? p) then
     if (8 * delta <? 2 ^ (p - 4)) then
       let Y := (4 * (NsumV 1) + 
@@ -1008,7 +1012,7 @@ Time Compute Npi 5.
 Definition Ndigit n := nToS (NpiDigitF n).
 
 (* 6^th decimal of Pi *)
-Time Compute Ndigit 6.
+Time Compute Ndigit 5.
 
 (******************************************************************************)
 (*                               Turning from N to BigN                       *)
@@ -1205,32 +1209,32 @@ Qed.
 Compute powerMod 2 123939 1239393331.
 Compute powerMod 17 262626 1239393331.
 
-(* Iterative state : counter kN = k and result *) 
-Inductive stateF := StateF (kN : bigN) (k : N) (s : bigN).
+(* Iterative state : counter iN = i and result *) 
+Inductive stateF := StateF (iN : bigN) (i : N) (s : bigN).
 
-(* Un pas : k = k + 1, kN = kN + 1,
-            s = s + (16^(d - 1 - k)) * 2^p / (8 * k + j) *)
-Definition iterF (j : bigN) (st : stateF) :=
-  let (kN, k, s) := st in
-  let r := 8 * kN + j in
-  let s := s + (BigN.shiftl (powerMod 16 (d - 1 - k)%N r) pN) / r in
-  let s := if s <? pS then s else s - pS in
-  StateF (kN + 1) (k + 1)%N s.
+(* Un pas : i = i + 1, iN = iN + 1,
+            ress = res + (16^(d - 1 - k)) * 2^p / (8 * i + k) *)
+Definition iterF (k : bigN) (st : stateF) :=
+  let: StateF iN i res := st in
+  let r := 8 * iN + k in
+  let res := res + (BigN.shiftl (powerMod 16 (d - 1 - i)%N r) pN) / r in
+  let res := if res <? pS then res else res - pS in
+  StateF (iN + 1) (i + 1)%N res.
 
 Definition eq_StateF (s1 : stateF) (s2 : NstateF) :=
-  let (k1,l1,n1) := s1 in
-  let (k2,n2) := s2 in
-  [[k1]] = k2 /\ N.to_nat l1 = k2 /\ [[n1]] = n2.
+  let: StateF i1 i1N res1 := s1 in
+  let: NStateF i2 res2 := s2 in
+  [[i1]] = i2 /\ N.to_nat i1N = i2 /\ [[res1]] = res2.
 
-Lemma specN_iterF s1 s2 j : (0 < [[j]])%nat ->
+Lemma specN_iterF s1 s2 k : (0 < [[k]])%nat ->
   eq_StateF s1 s2 ->
-  eq_StateF (iterF j s1) (NiterF (N.to_nat p) (N.to_nat d) [[j]] s2).
+  eq_StateF (iterF k s1) (NiterF (N.to_nat p) (N.to_nat d) [[k]] s2).
 Proof.
-move=> Pj.
+move=> Pk.
 case: s1; case: s2.
 rewrite /NiterF /iterF. 
 move=> k2 s2 k1 l1 s1 [<- [k1E <-] ].
-have F : (0 < [[8]] * [[k1]] + [[j]])%nat.
+have F : (0 < [[8]] * [[k1]] + [[k]])%nat.
   set x := (_ * _)%nat; lia.
 repeat split.
 - by rewrite specN_add /= Plus.plus_comm.
@@ -1246,42 +1250,42 @@ have ->: N.to_nat p = [[pN]].
 by rewrite mult_1_r.
 Qed.
 
-(* Compute \sum_{i = 0 to d - 1} (16^(d - 1 - i)) * 2^p / (8 * i + j) *)
-Definition iterL j :=
-   N.iter d (iterF j) (StateF 0 0%N 0).
+(* Compute \sum_{i = 0 to d - 1} (16^(d - 1 - i)) * 2^p / (8 * i + k) *)
+Definition iterL k :=
+   N.iter d (iterF k) (StateF 0 0%N 0).
 
-Lemma specN_iterL j : (0 < [[j]])%nat ->
-  eq_StateF (iterL j) (NiterL (N.to_nat p) (N.to_nat d) [[j]]).
+Lemma specN_iterL k : (0 < [[k]])%nat ->
+  eq_StateF (iterL k) (NiterL (N.to_nat p) (N.to_nat d) [[k]]).
 Proof.
-move=> Pj.
+move=> Pk.
 rewrite /iterL /NiterL.
 rewrite -{1}[d]Nnat.N2Nat.id -Nnat.Nat2N.inj_iter.
 elim: {1 3}N.to_nat => //= n IH.
 by apply: specN_iterF.
 Qed.
 
-(* Iterative state : counter kN = k shift d and result *) 
-Inductive stateG := StateG (kN : bigN) (kN : N) (d : bigN) (t : bigN).
+(* Iterative state : counter iN = i shift s and result *) 
+Inductive stateG := StateG (iN : bigN) (i : N) (s : bigN) (res : bigN).
 
-Definition eq_StateG (s1 : stateG) (s2 : NstateG) :=
-  let (k1,l1,d1,n1) := s1 in
-  let (k2,d2,n2) := s2 in
-  [[k1]] = k2 /\ N.to_nat l1 = k2 /\ [[d1]] = d2 /\ [[n1]] = n2.
+Definition eq_StateG (st1 : stateG) (st2 : NstateG) :=
+  let: StateG i1N i1 s1 res1 := st1 in
+  let: NStateG i2 s2 res2 := st2 in
+  [[i1N]] = i2 /\ N.to_nat i1 = i2 /\ [[s1]] = s2 /\ [[res1]] = res2.
 
-(* Un pas : kN = kN + 1, k = k + 1, d = d / 16,
-            t = t + (d/(8 * k + j)) *)
-Definition iterG (j : bigN) (st : stateG) :=
-  let (kN, k, d, t) := st in
-  let r := 8 * kN + j in
-  let t := t + (d / r) in
-  StateG (kN + 1) (k + 1)%N (BigN.shiftr d 4) t.
+(* Un pas : iN = iN + 1, i = i + 1, s = s / 16,
+            res = res + (s / (8 * i + k)) *)
+Definition iterG (k : bigN) (st : stateG) :=
+  let: StateG iN i s res := st in
+  let r := 8 * iN + k in
+  let res := res + (s / r) in
+  StateG (iN + 1) (i + 1)%N (BigN.shiftr s 4) res.
 
-Lemma specN_iterG s1 s2 j : (0 < [[j]])%nat ->
-  eq_StateG s1 s2 ->
-  eq_StateG (iterG j s1) (NiterG [[j]] s2).
+Lemma specN_iterG st1 st2 k : (0 < [[k]])%nat ->
+  eq_StateG st1 st2 ->
+  eq_StateG (iterG k st1) (NiterG [[k]] st2).
 Proof.
 move=> Pj.
-case: s1; case: s2.
+case: st1; case: st2.
 rewrite /NiterG /iterG. 
 move=> k2 d2 n2 k1 l1 d1 n1 [<- [k1E [<- <-] ] ].
 repeat split.
@@ -1293,14 +1297,14 @@ rewrite !(specN_if_cmp, specN_add, specN_sub, specN_mul,
 set x := (_ * _)%nat; lia.
 Qed.
 
-(* Compute \sum_{i = d to infinity} (16^(d - 1 - i)) / (8 * i + j) *)
-Definition iterR j :=
-  N.iter (p / 4) (iterG j) (StateG dN d (BigN.shiftr pS 4) 0).
+(* Compute \sum_{i = d to infinity} (16^(d - 1 - i)) / (8 * i + k) *)
+Definition iterR k :=
+  N.iter (p / 4) (iterG k) (StateG dN d (BigN.shiftr pS 4) 0).
 
-Lemma specN_iterR j : (0 < [[j]])%nat ->
-  eq_StateG (iterR j) (NiterR (N.to_nat p) (N.to_nat d) [[j]]).
+Lemma specN_iterR k : (0 < [[k]])%nat ->
+  eq_StateG (iterR k) (NiterR (N.to_nat p) (N.to_nat d) [[k]]).
 Proof.
-move=> Pj.
+move=> Pk.
 rewrite /iterR /NiterR.
 have -> : (p / 4)%N = (N.of_nat (N.to_nat p / 4)).
   apply: N2Z.inj.
@@ -1315,18 +1319,18 @@ elim: (_ / _)%nat => [|n IH].
 by apply: specN_iterG.
 Qed.
 
-(* Compute \sum_{i = 0 to infinity} (16^(d - 1 - i)) / (8 * i + j) *)
-Definition sumV j :=
-  let (_, _, s) := iterL j in
-  let (_, _, _, t) := iterR j in s + t.
+(* Compute \sum_{i = 0 to infinity} (16^(d - 1 - i)) / (8 * i + k) *)
+Definition sumV k :=
+  let: StateF _ _ res1 := iterL k in
+  let: StateG _ _ _ res2 := iterR k in res1 + res2.
 
-Lemma specN_sumV j : (0 < [[j]])%nat ->
-  [[sumV j]] = NsumV (N.to_nat p) (N.to_nat d) [[j]].
+Lemma specN_sumV k : (0 < [[k]])%nat ->
+  [[sumV k]] = NsumV (N.to_nat p) (N.to_nat d) [[k]].
 Proof.
-move=> Pj.
+move=> Pk.
 rewrite /sumV /NsumV.
-have := specN_iterL j Pj.
-have := specN_iterR j Pj.
+have := specN_iterL _ Pk.
+have := specN_iterR _ Pk.
 case: iterL => /= k1 l1 s1.
 case: NiterL => /= k2 l2.
 case: iterR => /= k3 l3 d3 s3.
@@ -1337,7 +1341,7 @@ Qed.
 
 (* Extra the first digit from Plouffe formula *)
 Definition piDigit :=
-  let delta := dN + pN / 4 + 2 in
+  let delta := dN + pN / 4 + 1 in
   if (3 <? pN) then
     if (8 * delta <? 2 ^ (pN - 4)) then
       let Y := (4 * (sumV 1) + 
@@ -1401,12 +1405,13 @@ End ComputePi.
 
  
 (* How many bits of the fixed-point like computation *)
-Definition precision := 40%N.
+Definition precision := 28%N.
 
 Definition piDigitF d :=
   match piDigit precision d with Some k => k | _ => 16 end.
 
 Definition NToS n := nToS (Z.to_nat (BigN.to_Z n)).
+
 
 Fixpoint rpi k n :=
   let v := NToS (piDigitF (N.of_nat k)) in
@@ -1446,8 +1451,8 @@ Time Compute rpi 450 49.
 
 Definition digit n := NToS (piDigitF n).
 
-(* 100000^th decimal of Pi *)
-Time Compute digit 100000.
+(* 1 000 000^th decimal of Pi *)
+Time Compute digit 1000000.
 
 
 
