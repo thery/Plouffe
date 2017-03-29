@@ -328,7 +328,7 @@ Proof. by exact: Series_scal_l. Qed.
 Lemma PigE : ((16 ^ d / 16) * 2 ^ p * PI = 
                4 * (Series (f 1)) - 2 * (Series (f 4)) 
                        - (Series (f 5)) - (Series (f 6)))%R.
-Proof. by rewrite Plouffe_PI !fgE /g; lra. Qed.
+Proof. by rewrite Plouffe_PI /Sk /a !fgE /g; lra. Qed.
 
 (* Iterative state : counter kN = k and result *) 
 Inductive NstateF := NStateF (i : nat) (res : nat).
@@ -1405,7 +1405,7 @@ End ComputePi.
 
  
 (* How many bits of the fixed-point like computation *)
-Definition precision := 28%N.
+Definition precision := 36%N.
 
 Definition piDigitF d :=
   match piDigit precision d with Some k => k | _ => 16 end.
@@ -1422,6 +1422,12 @@ end.
 
 (* Compute string of the hexa representation of pi *)
 Definition pi := rpi 0.
+
+Definition digit n := NToS (piDigitF n).
+
+(* 1 000^th decimal of Pi *)
+Time Compute digit 1000.
+
 
 (* Pi in hexa 
 
@@ -1448,11 +1454,5 @@ Time Compute rpi 300 49.
 Time Compute rpi 350 49.
 Time Compute rpi 400 49.
 Time Compute rpi 450 49.
-
-Definition digit n := NToS (piDigitF n).
-
-(* 1 000 000^th decimal of Pi *)
-Time Compute digit 1000000.
-
 
 
