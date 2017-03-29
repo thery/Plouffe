@@ -328,7 +328,7 @@ Proof. by exact: Series_scal_l. Qed.
 Lemma PigE : ((16 ^ d / 16) * 2 ^ p * PI = 
                4 * (Series (f 1)) - 2 * (Series (f 4)) 
                        - (Series (f 5)) - (Series (f 6)))%R.
-Proof. by rewrite Plouffe_PI /Sk /a !fgE /g; lra. Qed.
+Proof. by rewrite Plouffe_PI !fgE /g; lra. Qed.
 
 (* Iterative state : counter kN = k and result *) 
 Inductive NstateF := NStateF (i : nat) (res : nat).
@@ -1425,8 +1425,8 @@ Definition pi := rpi 0.
 
 Definition digit n := NToS (piDigitF n).
 
-(* 1 000^th decimal of Pi *)
-Time Compute digit 1000.
+(* 1 000 000^th decimal of Pi *)
+Time Compute digit 1000000000.
 
 
 (* Pi in hexa 

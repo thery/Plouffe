@@ -113,10 +113,11 @@ by move=> kpos; rewrite !sum_n_Reals sum_f_R0_holes.
 Qed.
 
 
-Lemma fill_holes : forall k a x, (k <> 0)%nat ->
-  ex_pseries a (x ^ k)->
+Lemma fill_holes k a x : 
+  (k <> 0)%nat -> ex_pseries a (x ^ k)->
   PSeries (hole k a) x = Series (fun n => a n * x ^ (k * n)).
-  move=> k a x kn0 exs; rewrite /PSeries /Series.
+Proof.
+move=> kn0 exs; rewrite /PSeries /Series.
 rewrite -(Lim_seq_subseq (sum_n _) (fun n => k * n)%nat).
 - set u := fun _ => _; set v:= sum_n _.
   rewrite (Lim_seq_ext u v) /u /v // => n.
@@ -154,9 +155,10 @@ Section Radius.
 Variable a : nat -> R.
 Hypothesis aP : forall n, 0 <= a n <= 1.
 
-Lemma PS_cv: forall x, 0 <= x -> x < 1 ->
+Lemma PS_cv x : 0 <= x -> x < 1 ->
  Rbar.Rbar_lt (Rbar.Finite (Rabs x)) (CV_radius a) .
-move=> x Px xL1.
+Proof.
+move=> Px xL1.
 have [F1 F2] := CV_radius_bounded a.
 suff F : Rbar.Rbar_le (Rbar.Finite ((x + 1) / 2)) (CV_radius a).
   apply: Rbar.Rbar_lt_le_trans F.
@@ -177,7 +179,6 @@ End Radius.
 
 Section Plouffe.
 
-
 Lemma PSerie_pow_add x k f a:
   Series (fun i => (a i ) * x ^ (k + f i)) = 
           x ^ k * Series (fun i => (a i) * x ^ f i).
@@ -187,11 +188,11 @@ by rewrite -Rmult_assoc pow_add; lra.
 Qed.
 
 (* Pseries with holes : coeff i = 0 except for 8*i , needs to use hole *)
-Lemma PSeries_hole x  a d k :  0 <= x < 1 ->  
+Lemma PSeries_hole x a d k :  0 <= x < 1 ->  
                   Series (fun i : nat => (a * x ^ (d + (S k) * i))) =
                        PSeries (PS_incr_n (hole (S k) (fun _ => a)) d) x.
 Proof.
-move=>[Hx0 Hx1].
+move=> [Hx0 Hx1].
 rewrite PSerie_pow_add.
 rewrite -fill_holes //;first by rewrite PSeries_incr_n.
 apply: (ex_series_ext (fun i =>  a * (x ^ (S k)) ^ i)) => [i|].
@@ -200,7 +201,7 @@ apply: ex_series_scal; apply/ex_series_geom/pow_lt_1.
 by rewrite Rabs_pos_eq.
 Qed.
 
-Lemma RInt_Series_hole n x: 0 <= x -> x < 1 -> (0 < n)%nat ->
+Lemma RInt_Series_hole n x : 0 <= x -> x < 1 -> (0 < n)%nat ->
       RInt (fun x => Series (fun i => x ^ (n - 1 + 8 * i))) 0 x = 
             PSeries (PS_Int (PS_incr_n (hole 8 (fun _ => 1)) (n - 1))) x.
 Proof.
@@ -226,7 +227,7 @@ Definition a (i : nat) := / (16 ^ i * (8 * i + k)%:R).
 Definition Sk := Series a.
 
 Lemma Sk_Rint  : 
-(0 < k)%nat ->
+ (0 < k)%nat ->
   Sk = sqrt 2 ^ k  * RInt (fun x => x ^ (k - 1) / (1 - x ^ 8)) 0 (/(sqrt 2)). 
 Proof.
 move=> kpos.
@@ -309,7 +310,6 @@ have-> : (n + i - (S n - 1) = i)%nat by lia.
 by rewrite e /Rdiv Rmult_1_l; congr (/_%:R); tlia.
 Qed.
 
-
 Lemma ex_RInt_Sk  n (f := fun x =>  (x ^ n/ (1 - x ^ 8))) :
   ex_RInt f 0  (/ sqrt 2).
 Proof.
@@ -334,7 +334,7 @@ Qed.
 End Sk.
 
 
-Lemma is_RInt_pow n  b: is_RInt (fun x => (x ^ n)) 0 b (b ^ (S n)/ (S n)%:R).
+Lemma is_RInt_pow n b: is_RInt (fun x => (x ^ n)) 0 b (b ^ (S n)/ (S n)%:R).
 Proof.
 pose f x := (x ^ S n) / (S n)%:R.
 have der_xSn x : is_derive f x (x ^ n).
@@ -350,26 +350,14 @@ apply: (continuous_ext (fun x => x ^ n) (Derive f)).
 by apply: ex_derive_continuous; auto_derive.
 Qed.
 
-
-
-Lemma RInt_pow n  b : RInt (fun x => x ^ n) 0 b = b ^ (S n)/ (S n)%:R.
+Lemma RInt_pow n b : RInt (fun x => x ^ n) 0 b = b ^ (S n)/ (S n)%:R.
 Proof. by apply/is_RInt_unique/is_RInt_pow. Qed.
-
 
 Fact x2p1 x : 0 < x ^ 2 - 2 * x + 2.
 Proof.
 have->: x ^ 2 - 2 * x + 2 = (x - 1)^2 + 1 by ring.
 by have := pow2_ge_0 (x - 1); lra.
 Qed.
-(*
-Lemma Derive_x2 x :  
-  Derive (fun x => -2 * ln (x ^ 2 - 2 * x + 2)) x  = 
-         (4 - 4 * x) / (x ^ 2 - 2 * x + 2).
-Proof.
-have hx := x2p1 x.
-by apply: is_derive_unique; auto_derive; Rcotpatch; tlra; field;lra.
-Qed.
-*)
 
 Lemma RInt_Spart1 :
   RInt (fun x => (4 - 4 * x) / (x ^ 2 - 2 * x + 2)) 0 1 = 2 * (ln 2 - ln 1).
@@ -407,13 +395,10 @@ Proof.
 by rewrite -{3}sqrt_1; apply: Rlt_Rminus; apply: sqrt_lt_1; lra.
 Qed.
 
-
-
 Fact x_between x : 0 <= x <= 1 -> - sqrt 2 < x < sqrt 2.
 by  have := sqrt2m1_pos; lra.
 Qed.
  
-
 Lemma Derive_ln_x2 x :  
   -sqrt 2 < x < sqrt 2 -> 
    Derive (fun x => 2 * ln (2 - x ^ 2)) x  = (4 * x) / (x ^ 2 - 2).
@@ -468,7 +453,6 @@ Rcotpatch; field.
 by have := x2p1 x; lra.
 Qed.
 
-
 Lemma RInt_Spart2 : RInt (fun x => 4 / (1 + (x  - 1)^ 2)) 0 1 = PI.
 Proof.
 rewrite (RInt_ext _ (Derive (fun x => 4 * atan (x - 1))))
@@ -484,8 +468,6 @@ apply:  (continuous_ext (fun x => 4 / (1 + (x - 1)^2))).
 apply:ex_derive_continuous; auto_derive.
 by have := x2p1 x;tlra.
 Qed.
-
-
 
 (* The Plouffe formula *)
 Lemma Plouffe_PI  : 
