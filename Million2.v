@@ -7,7 +7,7 @@ Require Import Reals Field Psatz Plouffe CPlouffe Million0.
 Time Eval native_compute in sumV cprecision cdigit 4.
 *)
 
-Definition comp2 := 58205461548.
+Definition comp2 := lift 113185819.
 
 Lemma comp2_def : comp2 = sumV cprecision cdigit 4.
 Proof.
