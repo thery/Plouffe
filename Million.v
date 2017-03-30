@@ -42,7 +42,7 @@ Qed.
 
 Let dd := Eval compute in cdigit.
 
-Lemma cpiDigit_val : 
+Lemma piDigit_1000000 : 
   Rdigit 16 (N.to_nat dd) PI = vcpiDigit.
 Proof.
 rewrite vcpiDigitE.
@@ -55,4 +55,4 @@ Qed.
 
 End Compute.
 
-Check cpiDigit_val.
+Check piDigit_1000000.
