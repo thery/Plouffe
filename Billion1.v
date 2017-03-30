@@ -13,4 +13,4 @@ Lemma comp1_def : comp1 = sumV cprecision cdigit 1.
 Proof.
 native_cast_no_check (refl_equal comp1).
 Time Qed.
-*)
+
