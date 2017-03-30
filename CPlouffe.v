@@ -336,7 +336,7 @@ Inductive NstateF := NStateF (i : nat) (res : nat).
 (* Un pas : i = i + 1
             res = ress + (16^(d - 1 - k)) * 2^p / (8 * k + j) *)
 Definition NiterF (k : nat) (st : NstateF) :=
-  let: NStateF i res := st in
+  let: (i, res) := st in
   let r := 8 * i + k in
   let res := res + (pS * (NpowerMod 16 (d - 1 - i) r)) / r in
   let res := if res <? pS then res else res - pS in
@@ -393,7 +393,7 @@ Definition NiterL k :=
    nat_iter d _ (NiterF k) (NStateF 0 0).
 
 Lemma NiterL_mod j : 0 < j ->
-  let: NStateF _ s1 := NiterL j in s1 < pS.
+  let (_, s1) := NiterL j in s1 < pS.
 Proof.
 rewrite /NiterL => Pj.
 have F : 0 < pS.
@@ -405,7 +405,7 @@ by apply: NiterF_mod.
 Qed.
 
 Lemma sumLE k : 0 < k -> 0 < d ->
-  let: NStateF _ res := NiterL k in 
+  let (_, res) := NiterL k in 
   exists u, 
   (0 <= sum_f_R0 (f k) (d - 1) - res%:R - u%:R * 2 ^ p < d%:R)%R.
 Proof.
@@ -470,7 +470,7 @@ Inductive NstateG := NStateG (i : nat) (s : nat) (res : nat).
 (* Un pas : i = i + 1, s = s / 16,
             res = res + (d / (8 * i + k)) *)
 Definition NiterG (k : nat) (st : NstateG) :=
-  let: NStateG i s res := st in
+  let (i, s, res) := st in
   let r := 8 * i + k in
   let res := res + (s / r) in
   NStateG (S i) (s / 16) res.
@@ -546,7 +546,7 @@ lra.
 Qed.
 
 Lemma NiterR_mod k : 0 < k ->
-  let: NStateG _ _ res := NiterR k in 15 * res < pS.
+  let (_, _, res) := NiterR k in 15 * res < pS.
 Proof.
 move=> Pk.
 case: (lt_dec 0 (p / 4))=> Pp; last first.
