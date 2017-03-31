@@ -13,4 +13,4 @@ Print val2.
 
 Set Printing All.
 
-Print val1.
+Print val2.
