@@ -45,7 +45,7 @@ and we need Series and PSeries from Coquelicot *)
 
 
 Definition hole (k : nat) (a : nat -> R) (n : nat) :=
-  if  Nat.eqb (n mod k) 0 then a (n / k)%nat  else 0.
+  if n mod k =? 0 then a (n / k)%nat else 0.
 
 (* the sum from the Coq R library, with small indexes *)
 
@@ -114,7 +114,7 @@ Qed.
 
 
 Lemma fill_holes k a x : 
-  (k <> 0)%nat -> ex_pseries a (x ^ k)->
+  (k <> 0)%nat -> ex_pseries a (x ^ k) ->
   PSeries (hole k a) x = Series (fun n => a n * x ^ (k * n)).
 Proof.
 move=> kn0 exs; rewrite /PSeries /Series.
@@ -228,7 +228,7 @@ Definition Sk := Series a.
 
 Lemma Sk_Rint  : 
  (0 < k)%nat ->
-  Sk = sqrt 2 ^ k  * RInt (fun x => x ^ (k - 1) / (1 - x ^ 8)) 0 (/(sqrt 2)). 
+  Sk = sqrt 2 ^ k  * RInt (fun x => x ^ (k - 1) / (1 - x ^ 8)) 0 (/ sqrt 2). 
 Proof.
 move=> kpos.
 (* have hr2:=  sqrt2_neq_0.*)
