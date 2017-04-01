@@ -7,12 +7,9 @@ Require Import Reals Field Psatz Plouffe CPlouffe Billion0.
 Time Eval native_compute in sumV cprecision cdigit 6.
 *)
 
-Definition comp4 := lift 34778560558.
+Definition comp4 := lift 289000933264774.
 
 Lemma comp4_def : comp4 = sumV cprecision cdigit 6.
-(*
 Proof.
 native_cast_no_check (refl_equal comp4).
 Time Qed.
-*)
-Admitted.
