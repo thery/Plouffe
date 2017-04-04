@@ -424,7 +424,7 @@ rewrite (RInt_ext _ (Derive (fun x => 2 * ln (2 - x ^ 2))))
      => [|x Hx]; last first.
   rewrite Rmin_left in Hx; auto with real.
   rewrite Rmax_right in Hx; auto with real.
-  by rewrite Derive_ln_x2 //; apply: x_between.
+  by rewrite Derive_ln_x2 //; apply: x_between; lra.
 set f := fun x => _.
 have ->: 2 * (ln 1 - ln 2) = f 1 - f 0.
   rewrite /f.
@@ -473,16 +473,36 @@ Qed.
 Lemma Plouffe_PI  : 
   PI = 4 * (Sk 1) - 2 * (Sk 4) - (Sk 5) -(Sk 6).
 Proof.
-  rewrite  !Sk_Rint; tlia.
-  rewrite -!RInt_scal -!RInt_minus;
+rewrite  !Sk_Rint; tlia.
+have Rth1 := @RInt_scal R_CompleteNormedModule.
+rewrite /scal /= /mult /= in Rth1.
+have Rth2 := @RInt_minus R_CompleteNormedModule.
+  rewrite /minus /= /plus [AbelianGroup.plus _ _ ]/= in Rth2.
+  rewrite /opp [AbelianGroup.opp _ _]/= in Rth2.
+rewrite /Rminus -!{}Rth1 -?Rth2;
     repeat  (apply: ex_RInt_Sk || (apply: ex_RInt_minus || apply: ex_RInt_scal 
           || apply: ex_RInt_opp)).
 (* integrating by variable substitution *)
 pose g x := /sqrt 2 * x + 0.
 replace 0 with (g 0) by (rewrite /g; ring).
 replace (/sqrt 2) with (g 1); last by rewrite /g; lra.
-rewrite -RInt_comp_lin.
-rewrite (RInt_ext _ (fun y => (16 * (y -1)) / (y^4 -2* y^3 +4*y -4))); last first.
+have Rth1 := @RInt_comp_lin R_CompleteNormedModule.
+rewrite /scal /= /mult /= in Rth1.
+rewrite -{}Rth1; last first.
+  have hm1 : 0 < / sqrt 2 < 1.
+    split; first by apply/Rinv_0_lt_compat/sqrt_lt_R0; lra.
+    have hsqrt2m1_pos := sqrt2m1_pos.
+    by rewrite -[X in _ < X]Rinv_1; apply: Rinv_1_lt_contravar; lra.
+  have H x : 0 <= x < 1 -> 1 - x ^ 8 <> 0.
+    move=> Hx.
+    suff : 0 <= x ^ 8 < 1 by lra.
+    by apply: pow_lt_1_compat; tlia.
+  repeat (apply: ex_RInt_minus || apply: ex_RInt_scal 
+          || apply: ex_RInt_opp);
+  apply: ex_RInt_continuous => x hx;
+  apply:ex_derive_continuous; auto_derive; apply H;
+  rewrite !(Rmin_left, Rmax_right) in hx; tlra.
+rewrite (RInt_ext _ (fun y => (16 * (y -1)) / (y^4 -2 * y^3 + 4* y -4))); last first.
   move=> x ; rewrite Rmin_left ?Rmax_right ; tlra=>-[hx0 hx1].
   have hsqrt20 := sqrt2_neq_0.
   rewrite ![(_ - _)%nat]/= Rplus_0_r pow_O pow_1 !Rpow_mult_distr -!Rinv_pow //.
@@ -494,7 +514,7 @@ rewrite (RInt_ext _ (fun y => (16 * (y -1)) / (y^4 -2* y^3 +4*y -4))); last firs
     have hsqrt2m1_pos := sqrt2m1_pos.
     suff : 0 < 2 - x^2 by lra.
     by apply/btwnsqrt2; tlra.
-  have hx4 : x^4 -2*x^3 +4*x -4 <> 0.
+  have hx4 : x^4 -2 * x^3 + 4*x - 4 <> 0.
     have -> : x ^ 4 - 2 * x ^ 3 + 4 * x - 4 = (1+ (x - 1)^2) *( x^2 -2) by field.
     by apply: Rmult_integral_contrapositive.
   have hx8: (sqrt 2) ^ 8 - x ^ 8 <> 0.
@@ -502,10 +522,10 @@ rewrite (RInt_ext _ (fun y => (16 * (y -1)) / (y^4 -2* y^3 +4*y -4))); last firs
     have hsqrt2m1_pos:=  sqrt2m1_pos.
     apply:(Rle_lt_trans _  1); tlra.
       have -> : 1 = 1^8 by lra.
-      by apply: pow_incr.
+      by apply: pow_incr; lra.
     by apply:Rlt_pow_R1 ; tlra; tlia.
-  field_simplify=>//.
-  have ->: s2^9 = 16 * s2.
+  field_simplify => //.
+  have ->: s2 ^9  = 16 * s2.
     replace 9%nat  with ( 2* 4  +1)%nat by lia.
     by rewrite pow_add pow_1 pow_sqr sqrt_sqrt; lra.
   have h16s2:  16 * s2 - s2 * x ^ 8 <> 0.
@@ -513,13 +533,13 @@ rewrite (RInt_ext _ (fun y => (16 * (y -1)) / (y^4 -2* y^3 +4*y -4))); last firs
     have -> : 16 = sqrt 2 ^ 8.
       have -> : (8 = 2 * 4)%nat by [].
       by rewrite pow_sqr  ?sqrt_sqrt; lra.
-    by apply: Rmult_integral_contrapositive;split;  tlra.
-  by field.
-  rewrite (RInt_ext _ (fun x =>  (4 - 4*x)/(x^2 -2* x +2) + (4 / (1 + (x -1)^2) + ((4* x)/(x^2 -2))))); last first.
+    by apply: Rmult_integral_contrapositive; split;  tlra.
+  by apply: Rminus_diag_uniq; field.
+rewrite (RInt_ext _ (fun x =>  (4 - 4*x)/(x^2 -2* x +2) + (4 / (1 + (x -1)^2) + ((4* x)/(x^2 -2))))); last first.
   move=> x ; rewrite Rmin_left ?Rmax_right ; tlra=>-[hx0 hx1].
   have ->: (1 + (x - 1) ^ 2) = (x ^ 2 - 2 * x + 2) by ring.
   have -> : (x ^ 4 - 2 * x ^ 3 + 4 * x - 4) = (x ^ 2 - 2 * x + 2) * (x ^ 2 - 2) by ring.
-  field.
+  apply: Rminus_diag_uniq; field.
   have xm1pos := (pow2_ge_0 (x -1)).
   have hxm1 : 1 + (x -1)^2 <> 0 by apply/not_eq_sym/Rlt_not_eq; lra.
   have hx2m2 : x^2 -2 <>0.
@@ -544,6 +564,8 @@ have exRI3:  ex_RInt (fun x : R => (4 - 4 * x) / (x ^ 2 - 2 * x + 2)) 0 1.
   apply: ex_RInt_continuous => x _;  apply:ex_derive_continuous; auto_derive.
   by have hx := x2p1 x; lra.
 rewrite !RInt_plus; (repeat  (apply: ex_RInt_plus|| apply: ex_RInt_scal))=> //.
-by rewrite RInt_Spart1 RInt_Spart2 RInt_Spart3; lra.
+rewrite RInt_Spart1 RInt_Spart2 RInt_Spart3.
+rewrite /plus [AbelianGroup.plus _ _ ]/=.
+by lra.
 Qed.
 End Plouffe.
