@@ -169,9 +169,9 @@ have [H1 H2] := aP n.
 rewrite Rabs_pos_eq; last first.
   apply: Rmult_le_pos; tlra.
   by apply: pow_le; lra.
-rewrite -{4}(Rmult_1_r 1).
+rewrite -{2}(Rmult_1_r 1).
 apply: Rmult_le_compat; tlra; first by apply: pow_le; lra.  
-by rewrite -{4}(pow1 n); apply: pow_incr; lra.
+by rewrite -{2}(pow1 n); apply: pow_incr; lra.
 Qed.
 
 End Radius.
@@ -392,7 +392,7 @@ Qed.
 
 Fact sqrt2m1_pos : 0 < sqrt 2 - 1.
 Proof.
-by rewrite -{3}sqrt_1; apply: Rlt_Rminus; apply: sqrt_lt_1; lra.
+by rewrite -sqrt_1; apply: Rlt_Rminus; apply: sqrt_lt_1; lra.
 Qed.
 
 Fact x_between x : 0 <= x <= 1 -> - sqrt 2 < x < sqrt 2.

@@ -4,7 +4,7 @@ From Coquelicot Require Import Coquelicot.
 Require Import Reals Field Psatz Plouffe CPlouffe.
 Require Import Million0 Million1 Million2 Million3 Million4.
 
-Require Import BigN.
+From Bignums Require Import BigN.
 
 Section Compute.
 

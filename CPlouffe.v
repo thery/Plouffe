@@ -382,7 +382,7 @@ have->: (2%:R = 2)%R by rewrite /=; lra.
 have ->: forall a b c d,  a = c -> (a + b - d - c = b - d)%R; last by lra.
   by move=> a1 b1 c1 d1 ->; ring.
 have ->: (2 ^ p = pS %:R)%R.
-  by rewrite /pS; rewrite pow_INR /=; lra.
+  by rewrite /pS; rewrite pow_INR.
 by rewrite -Rmult_assoc -mult_INR -/po; lra.
 Qed.
 
@@ -1018,7 +1018,7 @@ Time Compute Ndigit 5.
 (*                               Turning from N to BigN                       *)
 (******************************************************************************)
 
-Require Import BigN.
+From Bignums Require Import BigN.
 
 Open Scope bigN_scope.
 
