@@ -506,9 +506,9 @@ have G j :
     by apply: (lt_INR 0).
   have F4 : 0 < (16 ^ (1 + j) * (8 * (d + j) + k)).
     by apply: Nat.mul_pos_pos; try apply: F2; tlia.
-  rewrite /f Nat.div_div; tlia; last by have := F2 (1 + j); lia.
   have := approx_divR pS _ F4.
-  rewrite /pS mult_INR !pow_INR.
+  rewrite  /f /pS !(mult_INR, pow_INR) !Nat.div_div; try lia.
+  have->: (1%:R = 1)%R by rewrite /=; lra.
   have->: (2%:R = 2)%R by rewrite /=; lra.
   have->: (16%:R = 16)%R by rewrite /=; lra.
   set u := (_ / _)%R.
@@ -551,7 +551,6 @@ Proof.
 move=> Pk.
 case: (lt_dec 0 (p / 4))=> Pp; last first.
   rewrite /NiterR /nat_rect; replace (p / 4) with 0; tlia. 
-  by rewrite mult_0_r.
 have F0 : (0 < 16 ^ d)%R by apply: pow_lt; lra. 
 have F1 j N :
        j <> 1%R ->
@@ -1197,11 +1196,11 @@ case: b => [|b ] /=.
   rewrite specN_cmp.
   case E : (_ <? _)%nat.
     move: E; rewrite Nat.ltb_lt.
-    have ->: [[2]] = 2%nat by [].
-    by case: [[_]] Pm => //= [] [|n]; lia.
+    rewrite -[ [[2]] ]/2%nat.
+    by move=> u; replace [[m]] with 1%nat; try lia.
   rewrite Nat.mod_small //.
-  suff : ~([[m]] < 2)%nat by lia.
-  by rewrite -Nat.ltb_lt; case: (_ <? _)%nat E.
+  move: E; rewrite Nat.ltb_nlt.
+  by rewrite -[ [[2]] ]/2%nat; lia.
 rewrite specN_powerModc; tlia.
 by rewrite mult_1_r.
 Qed.
