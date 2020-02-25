@@ -97,7 +97,7 @@ Open Scope Z_scope.
 Require Import ZArith.
 
 Lemma pow_Zpower a b : 
-   Z.of_nat (a ^ b) =  Z.of_nat a ^ Z.of_nat b.
+   Z.of_nat (a ^ b) =  (Z.of_nat a ^ Z.of_nat b)%Z.
 Proof.
 rewrite -Zpower_nat_Z.
 elim: b => //= n IH.
@@ -1123,7 +1123,6 @@ Proof.
 move=> Pn.
 rewrite BigN.spec_div.
 rewrite -[(_ / _)%nat]Nat2Z.id div_Zdiv ?Z2Nat.id; tlia.
-  by apply: BigN.spec_pos.
 by apply: BigN.spec_pos.
 Qed.
 
