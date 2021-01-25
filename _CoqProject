@@ -1,3 +1,5 @@
+-arg -w -arg -native-compiler 
+-arg -w -arg yes 
 -R . Plouffe
 
 Plouffe.v
