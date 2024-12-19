@@ -1,5 +1,5 @@
 From mathcomp Require Import ssreflect.
-Require Import NPeano ZArith.
+Require Import PeanoNat ZArith.
 From Coquelicot Require Import Coquelicot.
 Require Import Reals Field Psatz Plouffe CPlouffe Billion0.
 

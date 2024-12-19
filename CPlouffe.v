@@ -1,5 +1,5 @@
 From mathcomp Require Import ssreflect.
-Require Import NPeano ZArith.
+Require Import PeanoNat ZArith.
 From Coquelicot Require Import Coquelicot.
 Require Import Reals Field Psatz Plouffe.
 Require Export String.
@@ -28,23 +28,23 @@ Proof.
 move=> Pc.
 case: (le_lt_dec (b * c) a) => Labc; last first.
   rewrite !le_minus_0; tlia.
-    by rewrite Nat.div_0_l; lia.
-  by apply: Nat.div_le_upper_bound; lia.
+    by rewrite Nat.Div0.div_0_l; lia.
+  by apply: Nat.Div0.div_le_upper_bound; lia.
 by rewrite -{2}(Nat.sub_add (b * c) a) // Nat.div_add; lia.
 Qed.
 
 Lemma mod_minus_mult a b c : 0 < c -> b * c <= a -> (a - b * c) mod c = a mod c.
 Proof.
 move=> Pp Lbca.
-by rewrite -{2}(Nat.sub_add (b * c) a) // Nat.mod_add; lia.
+by rewrite -{2}(Nat.sub_add (b * c) a) // Nat.Div0.mod_add; lia.
 Qed.
 
 Lemma pow_mod a b n :
   (0 < n -> (a ^ b) mod n = (a mod n) ^ b mod n)%nat.
 Proof.
 move=> Pn; elim: b => //= b IH.
-rewrite Nat.mul_mod ?IH; tlia.
-by rewrite Nat.mul_mod_idemp_r; lia.
+rewrite Nat.Div0.mul_mod ?IH; tlia.
+by rewrite Nat.Div0.mul_mod_idemp_r; lia.
 Qed.
 
 Lemma mod_between (a b c1 c2 m n : nat) :
@@ -55,37 +55,37 @@ Proof.
 move=> Lc1c2 Lmn Ldbm Pb Eac2ab.
 have F0 : b ^ m < b ^ n by apply: Nat.pow_lt_mono_r .
 have F1 : 2 * b ^ m <= b ^ n.
-  apply: le_trans (_ : b ^ (1 + m) <= b ^ n).
+  apply: Nat.le_trans (_ : b ^ (1 + m) <= b ^ n).
     rewrite Nat.pow_add_r Nat.pow_1_r.
-    by apply: mult_le_compat_r; lia.
+    by apply: Nat.mul_le_mono_r; lia.
   by apply: Nat.pow_le_mono_r; lia.
 pose x := a mod (b ^ n).
 have F2 : x < b ^ n by apply: Nat.mod_upper_bound; lia.
 case: (le_lt_dec (b ^ n) (x + c2)) => Lbnxc2.
   have F3 : (a + c2) mod b ^ n = x + c2 - b ^ n.
-    rewrite Nat.add_mod -/x; tlia.
+    rewrite Nat.Div0.add_mod -/x; tlia.
     rewrite [c2 mod _]Nat.mod_small; tlia.
     rewrite -(Nat.sub_add (b ^ n) (x + c2)) //.
-    rewrite Nat.add_mod ?Nat.mod_same; tlia.
-    rewrite plus_0_r Nat.mod_mod; tlia.
+    rewrite Nat.Div0.add_mod ?Nat.Div0.mod_same; tlia.
+    rewrite Nat.add_0_r Nat.Div0.mod_mod; tlia.
     rewrite Nat.mod_small; lia.
   have F4 : a mod b ^ n / b ^ m = 0.
     by rewrite -Eac2ab F3 Nat.div_small //; lia.
   have: b ^ m / b ^ m <= x / b ^ m.
-    apply: Nat.div_le_mono; lia.
+    apply: Nat.Div0.div_le_mono; lia.
   by rewrite F4 Nat.div_same; lia.
 have ->: (a + c1) mod b ^ n  = x + c1.
-  rewrite Nat.add_mod -/x; tlia.
+  rewrite Nat.Div0.add_mod -/x; tlia.
   rewrite [c1 mod _]Nat.mod_small; tlia.
   by rewrite Nat.mod_small; lia.
-rewrite -/x; apply: le_antisym.
+rewrite -/x; apply: Nat.le_antisymm.
   rewrite -Eac2ab.
   have ->: (a + c2) mod b ^ n  = x + c2.
-    rewrite Nat.add_mod -/x; tlia.
+    rewrite Nat.Div0.add_mod -/x; tlia.
     rewrite [c2 mod _]Nat.mod_small; tlia.
     by rewrite Nat.mod_small; lia.
-  by apply: Nat.div_le_mono; lia.
-by apply: Nat.div_le_mono; lia.
+  by apply: Nat.Div0.div_le_mono; lia.
+by apply: Nat.Div0.div_le_mono; lia.
 Qed.
 
 (******************************************************************************)
@@ -122,11 +122,11 @@ Lemma sum_f_R0_plus_r (f : nat -> R) m n :
   sum_f_R0 f (S (m +  n)) = 
       sum_f_R0 f m + sum_f_R0 (fun n => f (S m + n)%nat) n. 
 Proof.
-elim: n m f => [m f | n IH m f]; first by rewrite /= plus_0_r.
+elim: n m f => [m f | n IH m f]; first by rewrite /= Nat.add_0_r.
 rewrite Nat.add_succ_r decomp_sum; tlia.
 rewrite [pred _]/= IH -Rplus_assoc -(decomp_sum _ (S m)); tlia.
 rewrite [sum_f_R0 _ (S n)]decomp_sum; tlia.
-rewrite /= plus_0_r -!Rplus_assoc.
+rewrite /= Nat.add_0_r -!Rplus_assoc.
 congr (_ + _ + _).
 by apply: sum_eq => i _;rewrite Nat.add_succ_r.
 Qed.
@@ -143,12 +143,12 @@ split.
   apply: Rmult_le_pos; tlra.
   suff: (a / b * b) %:R <= a%:R by lra.
   apply: le_INR.
-  rewrite mult_comm {2}(Nat.div_mod a b); lia.
+  rewrite Nat.mul_comm {2}(Nat.div_mod a b); lia.
 apply: Rmult_lt_compat_l; tlra.
 suff: a%:R < (a / b * b + b) %:R by rewrite plus_INR; lra.
 apply: lt_INR.
 rewrite {1}(Nat.div_mod a b); tlia.
-rewrite mult_comm.
+rewrite Nat.mul_comm.
 suff :  (a mod b < b)%nat by lia.
 apply: Nat.mod_upper_bound; lia.
 Qed.
@@ -234,8 +234,7 @@ have F1 m : (0 <= Int_part (Rabs r * b %:R ^ m))%Z.
   by repeat (apply: Rmult_le_pos || apply: Rabs_pos || apply: pow_le
              || apply: pos_INR).
 have F2 := inj_lt  _ _ (F0 (k + n)%nat).
-rewrite -[(_ mod _)%nat]Nat2Z.id Zdiv.mod_Zmod; last first.
-  have := F0 (k + n)%nat; lia.
+rewrite -[(_ mod _)%nat]Nat2Z.id Nat2Z.inj_mod.
 rewrite Z2Nat.id //.
 rewrite Zdiv.Zmod_eq; tlia.
 rewrite Z2Nat.inj_sub; last first.
@@ -245,18 +244,18 @@ rewrite Z2Nat.inj_mul; tlia; last first.
   by apply: Z_div_pos; tlia.
 rewrite Nat2Z.id -pow_INR Int_part_INR; tlia.
 rewrite (_ : (b ^ (k + n) = b ^ n * b ^ k)%nat) //; last first.
-  by rewrite Nat.pow_add_r mult_comm.
+  by rewrite Nat.pow_add_r Nat.mul_comm.
 rewrite Nat.mul_assoc Ndiv_minus //.
 rewrite mult_INR -Rmult_assoc.
 rewrite -(Int_part_INR (Rabs r) (b ^ n)) //.
 rewrite -[X in (_ = X - _)%nat]Nat2Z.id.
-rewrite Zdiv.div_Zdiv; last by have := F0 k; lia.
+rewrite Nat2Z.inj_div.
 rewrite Z2Nat.id; last first.
-  by rewrite Rmult_assoc -mult_INR mult_comm -Nat.pow_add_r pow_INR.
+  by rewrite Rmult_assoc -mult_INR Nat.mul_comm -Nat.pow_add_r pow_INR.
 rewrite Int_part_INR //.
 rewrite -{2}[Int_part _]Z2Nat.id //; last by rewrite pow_INR.
-rewrite -Zdiv.div_Zdiv ?Nat2Z.id; last by have := F0 n; lia.
-rewrite mult_comm -Nat.mod_eq //; last by have := F0 n; lia.
+rewrite -Nat2Z.inj_div ?Nat2Z.id.
+rewrite Nat.mul_comm -Nat.Div0.mod_eq //.
 by rewrite /Rdigit /= Rmult_1_r.
 Qed.
 
@@ -279,7 +278,7 @@ have ->: (2 ^ 4) %:R = 16 by rewrite /=; lra.
 have ->: r * 16 ^ d / 16 * 16 = r * 16%:R ^ d.
   have ->: 16 %:R = 16 by rewrite /=; lra.
   by field.
-by rewrite Rdigit_shift plus_0_r.
+by rewrite Rdigit_shift Nat.add_0_r.
 Qed.
 
 (******************************************************************************)
@@ -314,7 +313,7 @@ Definition NpowerMod a b m := (a ^ b) mod m.
 Lemma NpowerModE a b : 0 < m -> 
  exists u, a ^ b = u * m + NpowerMod a b m.
 Proof.
-by exists (a ^ b / m); rewrite Mult.mult_comm; apply: Nat.div_mod; lia.
+by exists (a ^ b / m); rewrite Nat.mul_comm; apply: Nat.div_mod; lia.
 Qed.
 
 End power.
@@ -348,9 +347,9 @@ Proof.
 rewrite /NiterF => Pj sLpS.
 set x := _ / _.
 have : x < pS.
-  apply: Nat.div_lt_upper_bound; tlia.
-  rewrite mult_comm.
-  apply: mult_lt_compat_r; tlia .
+  apply: Nat.Div0.div_lt_upper_bound; tlia.
+  rewrite Nat.mul_comm.
+  apply Nat.mul_lt_mono_pos_r; tlia .
   by apply: Nat.mod_upper_bound; tlia.
 case E : (_ <? _); tlia.
 by move: E; rewrite Nat.ltb_lt; lia.
@@ -373,7 +372,7 @@ have ->: f k i = ((2 ^ p * 16 ^ (d - 1 - i))%:R / v%:R)%R.
   have {1}->: d = (d - 1 - i) + i + 1 by lia.
   rewrite !pow_add; field; lra.
 exists u1.
-rewrite Hu1 mult_plus_distr_l plus_INR.
+rewrite Hu1 Nat.mul_add_distr_l plus_INR.
 rewrite ![(2 ^ p * _)%:R]mult_INR [(u1 * _)%:R]mult_INR.
 rewrite [(_ / _)%R]Rmult_plus_distr_r.
 rewrite !Rmult_assoc Rinv_r ?Rmult_1_r; tlra.
@@ -421,8 +420,8 @@ elim: {-2}d (Nat.le_refl d) => // [dP dV| [|n] IH nLd _].
   suff ->: pS * NpowerMod 16 (d - 1 - 0) k / k <? pS = true.
     rewrite {-1 4}(_ : k = 8 * 0 + k); tlia.
     by apply:  base_sum_approxL; lia.
-  rewrite Nat.ltb_lt; apply: Nat.div_lt_upper_bound; tlia.
-  rewrite mult_comm; apply: mult_lt_compat_r.
+  rewrite Nat.ltb_lt; apply: Nat.Div0.div_lt_upper_bound; tlia.
+  rewrite Nat.mul_comm; apply Nat.mul_lt_mono_pos_r; last first.
     by apply: Nat.mod_upper_bound; lia.
   suff : 1 ^ 0 <= pS by rewrite Nat.pow_0_r; lia.
   by apply: Nat.pow_le_mono; lia.
@@ -488,12 +487,12 @@ have F n m i s :
      exists s1, nat_iter n _ (NiterG k) (NStateG m (pS / (16 ^ i)) s)
                               = (NStateG (m + n)(pS / (16 ^ (i + n))) s1).
   elim: n  => //= [|n [s1->]].
-    by exists s; congr NStateG; rewrite ?plus_0_r; tlia.
+    by exists s; congr NStateG; rewrite ?Nat.add_0_r; tlia.
   rewrite !Nat.add_succ_r.
   rewrite Nat.pow_succ_r; tlia.
   have F : 16 ^ 0 <= 16 ^(i + n) by apply: Nat.pow_le_mono_r; lia.
   rewrite Nat.pow_0_r in F; tlia. 
-  rewrite mult_comm -Nat.div_div; tlia.
+  rewrite Nat.mul_comm -Nat.Div0.div_div; tlia.
   by eexists; refine (refl_equal _).
 have G j : 
     (0 <= f k (d + j) - (pS / 16 ^ (1 + j) / (8 * (d + j) + k)) %:R < 1 %:R)%R.
@@ -507,7 +506,7 @@ have G j :
   have F4 : 0 < (16 ^ (1 + j) * (8 * (d + j) + k)).
     by apply: Nat.mul_pos_pos; try apply: F2; tlia.
   have := approx_divR pS _ F4.
-  rewrite  /f /pS !(mult_INR, pow_INR) !Nat.div_div; try lia.
+  rewrite  /f /pS !(mult_INR, pow_INR) !Nat.Div0.div_div; try lia.
   have->: (1%:R = 1)%R by rewrite /=; lra.
   have->: (2%:R = 2)%R by rewrite /=; lra.
   have->: (16%:R = 16)%R by rewrite /=; lra.
@@ -523,7 +522,7 @@ elim: (p/4) => [H|[|n] IH _].
 - contradict H; lia.
 - rewrite nat_rect_succ_r /nat_rec /NiterG.
   change (1 - 1) with 0.
-  rewrite /sum_f_R0 plus_0_l.
+  rewrite /sum_f_R0 Nat.add_0_l.
   change 16 with (16 ^(1 + 0)).
   by rewrite (_ : 8 * d = 8 * (d + 0)); tlia.
 rewrite (nat_rect_plus 1 (S n)).
@@ -562,21 +561,21 @@ have F2 N : (sum_f_R0 (fun i => (f k (d + i))) N <=
   have F j : (f k (d + j) <= 16 ^ d / 16 * 2 ^ p * (1 / 16) ^ (d + j))%R.
     have FF1 : (0 < 16 ^ (d + j))%R by apply: pow_lt; lra.  
     have FF2 : (1 <= (8 * (d + j) + k)%:R)%R by apply: (le_INR 1); lia.
-    rewrite /f  [((_ / _)^ _)%R]Rpow_mult_distr -Rinv_pow; tlra.
+    rewrite /f  [((_ / _)^ _)%R]Rpow_mult_distr pow_inv; tlra.
     rewrite -{2}[(16 ^ (d + j))%R]Rmult_1_r.
     rewrite pow1 Rmult_1_l /Rdiv !Rmult_assoc.
-    rewrite ![(/(_ ^ _ * _))%R]Rinv_mult_distr; tlra.
+    rewrite ![(/(_ ^ _ * _))%R]Rinv_mult; tlra.
     repeat apply: Rmult_le_compat_l; try by apply: pow_le; lra.
     - by apply: Rinv_le_0_compat; lra.
     - by apply: Rinv_le_0_compat; lra.
-    by apply: Rle_Rinv; lra.
-  elim: N => /= [|n IH]; first by  have := F 0; rewrite plus_0_r; lra.
+    by apply: Rinv_le_contravar; lra.
+  elim: N => /= [|n IH]; first by  have := F 0; rewrite Nat.add_0_r; lra.
   by have := F (S n); rewrite Nat.add_succ_r /= pow_add; lra.
 have F3 N : (sum_f_R0 (fun i => (f k (d + i))) N < 2 ^ p / 15)%R.
   apply: Rle_lt_trans (F2 _) _.
   rewrite F1; tlra.
   have-> : (16 ^ d / 16 * 2 ^ p * (1 / 16) ^ d = 2 ^ p / 16)%R.
-    rewrite [((_ / _)^ _)%R]Rpow_mult_distr -Rinv_pow; tlra.
+    rewrite [((_ / _)^ _)%R]Rpow_mult_distr pow_inv; tlra.
     by rewrite pow1; field; lra.
   rewrite !Rmult_assoc; apply: Rmult_lt_compat_l; tlra.
     by apply: pow_lt; lra. 
@@ -609,14 +608,14 @@ have H1: (0 <= 16 ^ d / 16 * 2 ^ p)%R.
 apply:(Rle_trans _ (16 ^ d / 16 * 2 ^ p / (16 ^ n * (8 * n + k) %:R))); last first.
   apply: Rmult_le_compat_l.
     by apply H1.
-rewrite Rinv_mult_distr; tlra.
+rewrite Rinv_mult; tlra.
 have ->: ((1 / 16) ^ n = / (16 ^ n) * 1)%R.
-  rewrite /Rdiv Rmult_1_l Rinv_pow; lra.
+  rewrite /Rdiv Rmult_1_l -pow_inv; lra.
 apply: Rmult_le_compat_l.
   by apply: Rinv_le_0_compat.
 have ->: (1 = 1 / 1)%R by field.
 rewrite /Rdiv Rmult_1_l.
-apply: Rle_Rinv; tlra.
+apply: Rinv_le_contravar; tlra.
 by apply: (le_INR 1); lia.
 set gg := (16 ^ d / 16 * 2 ^ p / (16 ^ n * (8 * n + k) %:R))%R.
   rewrite  /Hierarchy.norm /= /abs /= Rabs_right.
@@ -632,7 +631,7 @@ move => Pj; split.
   suff <-: Series (fun i => (0 * 0)%R) = 0%R.
     apply: Series_le => [n|]; last first.
       apply: (ex_series_ext (fun i : nat => f k ((d + p / 4) + i))).
-        by move=> n; rewrite Plus.plus_assoc.
+        by move=> n; rewrite - Nat.add_assoc.
       by rewrite -ex_series_incr_n; apply: ex_series_f.
     split; tlra.
     rewrite Rmult_0_l.
@@ -651,23 +650,17 @@ apply: Rle_lt_trans (Series_le _ f1 _ _) _.
     by apply: (lt_INR 0); lia.
   set x := (16 ^ d / 16 * 2 ^ p)%R.
   set y := (_ * _)%R.
-  rewrite -Rinv_pow; tlra.
+  rewrite pow_inv; tlra.
   rewrite Rmult_assoc.
   apply: Rmult_le_compat_l.
     by repeat (apply: Rcomplements.Rdiv_le_0_compat || apply: Rmult_le_pos);
       (try by apply: pow_le; lra); lra.
-  rewrite -Rinv_mult_distr.
-  - rewrite -Rdef_pow_add.
-    apply: Rle_Rinv; first by apply: pow_lt; lra.
-      apply: Rmult_lt_0_compat; first by apply: pow_lt; lra.
-      by apply: (lt_INR 0); lia.
-    rewrite -Plus.plus_assoc -[X in (X <= _)%R]Rmult_1_r.
-    apply: Rmult_le_compat_l; first by apply: pow_le; lra.
-    by apply: (le_INR 1); lia.
-  - suff: (0 < 16 ^ (d + p / 4))%R by lra.
-    by apply: pow_lt; lra.
-  suff: (0 < 16 ^ n)%R by lra.
-  by apply: pow_lt; lra.
+  rewrite -Rinv_mult.
+  rewrite -Rdef_pow_add.
+  apply: Rinv_le_contravar; first by apply: pow_lt; lra.
+  rewrite -Nat.add_assoc -[X in (X <= _)%R]Rmult_1_r.
+  apply: Rmult_le_compat_l; first by apply: pow_le; lra.
+  by apply: (le_INR 1); lia.
 - apply: ex_series_scal_l.
   apply: ex_series_geom.
   by split_Rabs; lra.
@@ -696,8 +689,8 @@ apply: Rlt_le_trans (_ : (2 ^ (p + 1) *  15 <= _)%R).
   by apply: pow_lt; lra.
 apply: Rmult_le_compat_r; tlra.
 apply: Rle_pow; tlra.
-rewrite {1}(NPeano.Nat.div_mod p 4); tlia.
-have := NPeano.Nat.mod_bound_pos p 4.
+rewrite {1}(Nat.div_mod p 4); tlia.
+have := Nat.mod_bound_pos p 4.
 by lia.
 Qed.
 
@@ -914,14 +907,14 @@ rewrite !Nat2Z.id mod_minus_mult; tlia; last first.
   rewrite R_Ifp.Int_part_INR .
   suff : (0 <= Int_part X)%Z by lia.
   by apply: le_Int_part_pos.
-rewrite Nat.mod_add; tlia.
+rewrite Nat.Div0.mod_add; tlia.
 rewrite /X -PigE.
 have ->: (16 ^ d / 16 * 2 ^ p * PI = Rabs PI * 16 ^ d / 16 * 2 ^ p)%R.
   rewrite Rabs_pos_eq; tlra.
   by have := PI2_1; lra.
 have {1}->: 2 ^ (p - 4) = 2 ^ p / 16.
   have {2}->: p = 4 + (p - 4) by lia.
-  by rewrite Nat.pow_add_r mult_comm Nat.div_mul.
+  by rewrite Nat.pow_add_r Nat.mul_comm Nat.div_mul.
 rewrite -Rdigit_mod_div16 //; lia.
 Qed.
 
@@ -934,7 +927,7 @@ Definition NpiDigit :=
              (9 * pS - (2 * NsumV 4 + NsumV 5 + NsumV 6 + 4 * delta))) in
       let v1 := (Y + 8 * delta) mod 2 ^ p / 2 ^ (p - 4) in
       let v2 := Y mod 2 ^ p / 2 ^ (p - 4) in
-      if beq_nat v1 v2 then Some v2 else
+      if v1 =? v2 then Some v2 else
       None
     else None
   else None.
@@ -1021,7 +1014,9 @@ From Bignums Require Import BigN.
 
 Open Scope bigN_scope.
 
-Notation " [[ n ]] " := (Z.to_nat [n]).
+Local Notation " [ n ] " := (BigN.to_Z n).
+
+Notation " [[ n ]] " := (Z.to_nat (BigN.to_Z n)).
 
 Lemma specN_add m n : [[m + n]] = ([[m]] + [[n]])%nat.
 Proof.
@@ -1055,7 +1050,7 @@ Lemma specN_mod m n :
 Proof.
 move=> Pn.
 rewrite BigN.spec_modulo -[X in _ = X]Nat2Z.id.
-by rewrite mod_Zmod  ?Z2Nat.id //; tlia; try by apply: BigN.spec_pos.
+by rewrite Nat2Z.inj_mod ?Z2Nat.id //; tlia; try by apply: BigN.spec_pos.
 Qed.
 
 Lemma specN_cmp m n : m <? n = ([[m]] <? [[n]])%nat.
@@ -1075,7 +1070,7 @@ Lemma specN_if_cmp m n p q :
   (if [[m]] <? [[n]] then [[p]] else [[q]])%nat.
 Proof. by rewrite specN_cmp; case: (_ <? _)%nat. Qed.
 
-Lemma specN_eqb m n : m =? n = (beq_nat [[m]] [[n]])%nat.
+Lemma specN_eqb m n : m =? n = ([[m]] =? [[n]])%nat.
 Proof.
 rewrite BigN.spec_eqb.
 case: Nat.eqb_spec.
@@ -1087,8 +1082,8 @@ Qed.
 
 Lemma specN_if_eqp m n p q : 
   [[if m =? n then p else q]] = 
-  (if beq_nat [[m]] [[n]] then [[p]] else [[q]])%nat.
-Proof. by rewrite specN_eqb; case: beq_nat. Qed.
+  (if [[m]] =? [[n]] then [[p]] else [[q]])%nat.
+Proof. by rewrite specN_eqb; case: Nat.eqb. Qed.
 
 Lemma specN_shiftl m n : 
   ([[BigN.shiftl m n]] = (2 ^ [[n]]) * [[m]])%nat.
@@ -1099,7 +1094,7 @@ rewrite Z2Nat.inj_mul; last 2 first.
 - by apply: BigN.spec_pos.
 - by apply: Z.pow_nonneg.
 rewrite -[(_ ^ _)%nat]Nat2Z.id pow_Zpower !Z2Nat.id.
-  by rewrite mult_comm.
+  by rewrite Nat.mul_comm.
 by apply: BigN.spec_pos.
 Qed.
 
@@ -1110,11 +1105,9 @@ rewrite BigN.spec_shiftr.
   rewrite Z.shiftr_div_pow2; last first.
   by apply: BigN.spec_pos.
 rewrite -[(_ / _)%nat]Nat2Z.id.
-rewrite div_Zdiv ?pow_Zpower ?Z2Nat.id //.
+rewrite Nat2Z.inj_div ?pow_Zpower ?Z2Nat.id //.
 - by apply: BigN.spec_pos.
-- by apply: BigN.spec_pos.
-suff : (2 ^ 0 <= 2 ^ [[n]])%nat by rewrite /=; lia.
-by apply: Nat.pow_le_mono_r; lia.
+by apply: BigN.spec_pos.
 Qed.
 
 Lemma specN_div m n : 
@@ -1122,7 +1115,7 @@ Lemma specN_div m n :
 Proof.
 move=> Pn.
 rewrite BigN.spec_div.
-rewrite -[(_ / _)%nat]Nat2Z.id div_Zdiv ?Z2Nat.id; tlia.
+rewrite -[(_ / _)%nat]Nat2Z.id Nat2Z.inj_div ?Z2Nat.id; tlia.
 by apply: BigN.spec_pos.
 Qed.
 
@@ -1154,12 +1147,12 @@ Lemma specN_powerModc a b c : (0 < [[m]])%nat ->
   [[powerModc a b c]] = (([[a]] ^ (Pos.to_nat b) * [[c]]) mod [[m]])%nat.
 Proof.
 move=> mP; elim: b a c => // [b1 IH a c|b1 IH a c|a c]; last first.
-- by rewrite /= specN_mod // specN_mul mult_1_r.
+- by rewrite /= specN_mod // specN_mul Nat.mul_1_r.
 - rewrite IH Pos2Nat.inj_xO.
   rewrite Nat.pow_mul_r.
   rewrite specN_mod //.
-  rewrite -[X in X = _]Nat.mul_mod_idemp_l; tlia.
-  rewrite -[X in _ = X]Nat.mul_mod_idemp_l; tlia.
+  rewrite -[X in X = _]Nat.Div0.mul_mod_idemp_l; tlia.
+  rewrite -[X in _ = X]Nat.Div0.mul_mod_idemp_l; tlia.
   congr (_ * _ mod _)%nat.
   rewrite -pow_mod; tlia.
   congr (_ ^ _ mod _)%nat.
@@ -1168,15 +1161,15 @@ rewrite IH Pos2Nat.inj_xI.
 rewrite Nat.pow_succ_r; tlia.
 rewrite Nat.pow_mul_r.
 rewrite !specN_mod //.
-rewrite Nat.mul_mod_idemp_r; tlia.
-rewrite !specN_mul // Mult.mult_assoc.
-rewrite -[X in X = _]Nat.mul_mod_idemp_l; tlia.
-rewrite -[X in _ = X]Nat.mul_mod_idemp_l; tlia.
+rewrite Nat.Div0.mul_mod_idemp_r; tlia.
+rewrite !specN_mul // Nat.mul_assoc.
+rewrite -[X in X = _]Nat.Div0.mul_mod_idemp_l; tlia.
+rewrite -[X in _ = X]Nat.Div0.mul_mod_idemp_l; tlia.
 congr (_ * _ mod _)%nat.
-rewrite [X in (_ = X mod _)%nat]mult_comm.
-rewrite -[X in _ = X]Nat.mul_mod_idemp_l; tlia.
+rewrite [X in (_ = X mod _)%nat]Nat.mul_comm.
+rewrite -[X in _ = X]Nat.Div0.mul_mod_idemp_l; tlia.
 rewrite pow_mod; tlia.
-rewrite [X in _ = X]Nat.mul_mod_idemp_l /= ; tlia.
+rewrite [X in _ = X]Nat.Div0.mul_mod_idemp_l /= ; tlia.
 by congr ((_ mod _) ^ _ * _ mod _)%nat; lia.
 Qed.
 
@@ -1201,7 +1194,7 @@ case: b => [|b ] /=.
   move: E; rewrite Nat.ltb_nlt.
   by rewrite -[ [[2]] ]/2%nat; lia.
 rewrite specN_powerModc; tlia.
-by rewrite mult_1_r.
+by rewrite Nat.mul_1_r.
 Qed.
 
 Compute powerMod 2 123939 1239393331.
@@ -1235,8 +1228,8 @@ move=> k2 s2 k1 l1 s1 [<- [k1E <-] ].
 have F : (0 < [[8]] * [[k1]] + [[k]])%nat.
   set x := (_ * _)%nat; lia.
 repeat split.
-- by rewrite specN_add /= Plus.plus_comm.
-- by rewrite -k1E Nnat.N2Nat.inj_add Plus.plus_comm.
+- by rewrite specN_add /= Nat.add_comm.
+- by rewrite -k1E Nnat.N2Nat.inj_add Nat.add_comm.
 rewrite !(specN_if_cmp, specN_add, specN_sub, specN_mul, 
           specN_div, specN_shiftl, specN_powerMod) //.
 have ->: [[16]] = 16%nat by [].
@@ -1245,7 +1238,7 @@ rewrite /pS /NpowerMod !Nnat.N2Nat.inj_sub k1E.
 have ->: N.to_nat 1 = 1%nat by [].
 have ->: N.to_nat p = [[pN]].
   by rewrite BigN.spec_of_N -Z_N_nat N2Z.id.
-by rewrite mult_1_r.
+by rewrite Nat.mul_1_r.
 Qed.
 
 (* Compute \sum_{i = 0 to d - 1} (16^(d - 1 - i)) * 2^p / (8 * i + k) *)
@@ -1287,8 +1280,8 @@ case: st1; case: st2.
 rewrite /NiterG /iterG. 
 move=> k2 d2 n2 k1 l1 d1 n1 [<- [k1E [<- <-] ] ].
 repeat split.
-- by rewrite specN_add /= Plus.plus_comm.
-- by rewrite -k1E Nnat.N2Nat.inj_add Plus.plus_comm.
+- by rewrite specN_add /= Nat.add_comm.
+- by rewrite -k1E Nnat.N2Nat.inj_add Nat.add_comm.
 - by rewrite specN_shiftr.
 rewrite !(specN_if_cmp, specN_add, specN_sub, specN_mul, 
           specN_div, specN_shiftl, specN_powerMod) //.
@@ -1306,7 +1299,7 @@ move=> Pk.
 rewrite /iterR /NiterR.
 have -> : (p / 4)%N = (N.of_nat (N.to_nat p / 4)).
   apply: N2Z.inj.
-  by rewrite N2Z.inj_div nat_N_Z div_Zdiv ?N_nat_Z; lia.
+  by rewrite N2Z.inj_div nat_N_Z Nat2Z.inj_div ?N_nat_Z; lia.
 rewrite -Nnat.Nat2N.inj_iter.
 elim: (_ / _)%nat => [|n IH].
   repeat split.
@@ -1381,7 +1374,7 @@ have-> : [[dN]] = N.to_nat d.
   by rewrite -Z_N_nat BigN.spec_of_N N2Z.id.
 case: (_ <? _)%nat => //.
 rewrite Nat.mul_1_r.
-case: beq_nat => //.
+case: Nat.eqb => //.
 rewrite !(specN_cmp, specN_eqb, specN_add, specN_sub, specN_mul, 
           specN_div, specN_shiftl, specN_pow, specN_mod, specN_sumV) //.
 have-> : [[pN]] = N.to_nat p.
@@ -1452,5 +1445,4 @@ Time Compute rpi 300 49.
 Time Compute rpi 350 49.
 Time Compute rpi 400 49.
 Time Compute rpi 450 49.
-
 

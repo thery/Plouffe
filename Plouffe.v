@@ -1,7 +1,7 @@
 (* Require ssreflect tactics *)
 From mathcomp Require Import ssreflect.
 (* working with Coq Reals *)
-Require Import NPeano Psatz Reals.
+Require Import PeanoNat Psatz Reals.
 (* Using Coquelicot for Series, Power Series and Integrals *)
 Require Import Coquelicot.Coquelicot.
 
@@ -55,10 +55,10 @@ Lemma sum_f_R0_holes_small a g k n
     -> sum_f_R0 (fun i => trm (S(k * n) + i)%nat) l = 0.
 Proof.
 elim: l => [|l IHl] lk.
-  rewrite /= /trm /hole (_ : (_ mod _ = 1)%nat) /=; tlra.  
-  by rewrite plus_n_Sm Plus.plus_comm mult_comm Nat.mod_add ?Nat.mod_small;lia.
+  rewrite /= /trm /hole (_ : (_ mod _ = 1)%nat) /=; tlra. 
+  rewrite plus_n_Sm Nat.add_comm Nat.mul_comm Nat.Div0.mod_add ?Nat.mod_small;lia.
 rewrite /=; set s := sum_f_R0 _ _.
-rewrite plus_n_Sm Plus.plus_comm mult_comm /trm /hole Nat.mod_add;tlia.
+rewrite plus_n_Sm Nat.add_comm Nat.mul_comm /trm /hole Nat.Div0.mod_add;tlia.
 by rewrite  Nat.mod_small /= ?Rmult_0_l ?Rplus_0_r /s ?IHl;tlia.
 Qed.
 
@@ -78,7 +78,7 @@ Lemma sumf_f_R0_add_r f m n : (n <> 0)%nat ->
       sum_f_R0 f m + sum_f_R0 (fun i => f (S m + i)%nat) (pred n).
 Proof.
 case: n => // n _.
-elim: n => [|n IH]; first by rewrite Plus.plus_comm /= plus_0_r.
+elim: n => [|n IH]; first by rewrite Nat.add_comm /= Nat.add_0_r.
 by rewrite Nat.add_succ_r /= IH /=; lra.
 Qed.
 
@@ -89,19 +89,19 @@ Lemma sum_f_R0_holes k a g n :
 Proof.
 set trm := (fun _ =>  _).
 move => kn0; elim: n => [| n IH].
-  rewrite /trm /= mult_0_r /hole /= Nat.mod_0_l /=; tlia.
-  by rewrite Nat.div_0_l; tlia.
-rewrite mult_succ_r sumf_f_R0_add_r // {}IH {}/trm.
+  rewrite /trm /= Nat.mul_0_r /hole /= Nat.Div0.mod_0_l /=; tlia.
+  by rewrite Nat.Div0.div_0_l; tlia.
+rewrite Nat.mul_succ_r sumf_f_R0_add_r // {}IH {}/trm.
 congr (_ + _).
 case: k kn0 => //= [] [|k] _ /=.
-  by rewrite !plus_0_r /hole Nat.mod_1_r Nat.div_1_r.
+  by rewrite !Nat.add_0_r /hole Nat.mod_1_r Nat.div_1_r.
 rewrite  sum_f_R0_holes_small //.
-rewrite /hole plus_n_Sm Nat.add_mod ?Nat.mod_same; tlia.
+rewrite /hole plus_n_Sm Nat.Div0.add_mod ?Nat.Div0.mod_same; tlia.
 change (n + (n + k * n))%nat with (S (S k) * n)%nat.
-rewrite mult_comm Nat.mod_mul ?Nat.mod_0_l; tlia.
+rewrite Nat.mul_comm Nat.Div0.mod_mul ?Nat.Div0.mod_0_l; tlia.
 rewrite Rplus_0_l.
 congr (a _ * g _); tlia.
-by rewrite -mult_succ_l Nat.div_mul.
+by rewrite -Nat.mul_succ_l Nat.div_mul.
 Qed.
 
 (* same result for coquelicot sum *)
@@ -123,14 +123,14 @@ rewrite -(Lim_seq_subseq (sum_n _) (fun n => k * n)%nat).
   rewrite (Lim_seq_ext u v) /u /v // => n.
   by apply: sum_n_holes.
 - apply: eventually_subseq => n.
-  by rewrite mult_succ_r; lia.
+  by rewrite Nat.mul_succ_r; lia.
 case: exs => l il.
 exists l; move => eps Heps.
 case (il eps Heps) => // N Pn; exists (k * N)%nat => n nN.
 rewrite [n](Nat.div_mod _ _ kn0).
 set trm := (fun _ =>  _).
 case: (eq_nat_dec (n mod k) 0) => [->|Dk].
-  rewrite plus_0_r sum_n_holes //.
+  rewrite Nat.add_0_r sum_n_holes //.
   rewrite  (sum_n_ext  _ (fun i => (x ^ k) ^ i * a i)); last first.
     by move => i; rewrite Rmult_comm; congr (_ * _); rewrite pow_mult.
   apply: Pn.
@@ -235,14 +235,14 @@ move=> kpos.
 have sqrtp:= Rlt_sqrt2_0.
 have h16:  (/ sqrt 2) ^ 8 = /16.
   have -> : (8 = 2 * 4)%nat by [].
-  by rewrite pow_sqr -Rinv_mult_distr ?sqrt_sqrt; lra.
+  by rewrite pow_sqr -Rinv_mult ?sqrt_sqrt; lra.
 have h16i i: (16 ^ i) <> 0 by apply: pow_nonzero; lra.
 have hn0 i : (8 * i + k) %:R <> 0 by apply: not_0_INR; lia.
 have H1 i:  / (16 ^ i * (8 * i + k)%:R) = sqrt 2 ^ k *
      (fun x => (x ^ (k + 8*i) / ((8  * i) + k)%:R)) (/ sqrt 2).
   rewrite pow_add; field_simplify => //.
   rewrite -Rpow_mult_distr Rinv_r ?pow1; tlra;  field_simplify => //.
-  by rewrite pow_mult h16 -Rinv_pow; tlra; field.
+  by rewrite pow_mult h16 pow_inv; tlra; field.
 rewrite /Sk (Series_ext _ _ H1) Series_scal_l  {H1}.
 congr (_ * _).
 have sqrtip: (0 < / (sqrt 2)) by apply:Rinv_0_lt_compat.
@@ -281,7 +281,7 @@ rewrite -fill_holes; tlia; last first.
     by apply: lt_0_INR; lia.
   apply Rle_trans with 1; tlra.
   by apply Rlt_le, pow_lt_1_compat; tlra. 
-case: k {  g hn0} kpos => [| n _]; first by move: (lt_irrefl 0).
+case: k {  g hn0} kpos => [| n _]; first by move: (Nat.lt_irrefl 0).
 set PSL := PSeries _ _.
 rewrite (PSeries_decr_n_aux _ (n + 1) (/ (sqrt 2))); last first.
   case=> //= i Hi;rewrite PS_incr_n_simplify.
@@ -295,7 +295,7 @@ case Nat.eqb_spec => e; last first.
   have -> : (n + 1 + i = S (n + i))%nat by lia.
   rewrite /PS_Int PS_incr_n_simplify.
   have->: (n + i - (S n - 1) = i)%nat by lia.
-  rewrite (iffRL (beq_nat_false_iff _ _) e).
+  rewrite (iffRL (Nat.eqb_neq _ _) e).
   by case: le_lt_dec; Rcotpatch; rewrite /= /Rdiv Rmult_0_l Rmult_0_r.
 rewrite /PS_scal.
 rewrite (_ : PS_decr_n _ _ _ = /(i + n + 1)%:R).
@@ -392,7 +392,7 @@ Qed.
 
 Fact sqrt2m1_pos : 0 < sqrt 2 - 1.
 Proof.
-by rewrite -sqrt_1; apply: Rlt_Rminus; apply: sqrt_lt_1; lra.
+by rewrite -sqrt_1; apply/Rlt_0_minus; apply: sqrt_lt_1; lra.
 Qed.
 
 Fact x_between x : 0 <= x <= 1 -> - sqrt 2 < x < sqrt 2.
@@ -477,7 +477,7 @@ rewrite  !Sk_Rint; tlia.
 have Rth1 := @RInt_scal R_CompleteNormedModule.
 rewrite /scal /= /mult /= in Rth1.
 have Rth2 := @RInt_minus R_CompleteNormedModule.
-  rewrite /minus /= /plus [AbelianGroup.plus _ _ ]/= in Rth2.
+  rewrite /minus /= /plus [AbelianMonoid.plus _ _ ]/= in Rth2.
   rewrite /opp [AbelianGroup.opp _ _]/= in Rth2.
 rewrite /Rminus -!{}Rth1 -?Rth2;
     repeat  (apply: ex_RInt_Sk || (apply: ex_RInt_minus || apply: ex_RInt_scal 
@@ -505,7 +505,7 @@ rewrite -{}Rth1; last first.
 rewrite (RInt_ext _ (fun y => (16 * (y -1)) / (y^4 -2 * y^3 + 4* y -4))); last first.
   move=> x ; rewrite Rmin_left ?Rmax_right ; tlra=>-[hx0 hx1].
   have hsqrt20 := sqrt2_neq_0.
-  rewrite ![(_ - _)%nat]/= Rplus_0_r pow_O pow_1 !Rpow_mult_distr -!Rinv_pow //.
+  rewrite ![(_ - _)%nat]/= Rplus_0_r pow_O pow_1 !Rpow_mult_distr !pow_inv //.
   set s2 := sqrt 2.
   have xm1pos := (pow2_ge_0 (x -1)).
   have hxm1 : 1 + (x -1)^2 <> 0 by apply/not_eq_sym/Rlt_not_eq; lra.
@@ -518,7 +518,7 @@ rewrite (RInt_ext _ (fun y => (16 * (y -1)) / (y^4 -2 * y^3 + 4* y -4))); last f
     have -> : x ^ 4 - 2 * x ^ 3 + 4 * x - 4 = (1+ (x - 1)^2) *( x^2 -2) by field.
     by apply: Rmult_integral_contrapositive.
   have hx8: (sqrt 2) ^ 8 - x ^ 8 <> 0.
-    apply/not_eq_sym/Rlt_not_eq/Rlt_Rminus.
+    apply/not_eq_sym/Rlt_not_eq/Rlt_0_minus.
     have hsqrt2m1_pos:=  sqrt2m1_pos.
     apply:(Rle_lt_trans _  1); tlra.
       have -> : 1 = 1^8 by lra.
@@ -565,7 +565,7 @@ have exRI3:  ex_RInt (fun x : R => (4 - 4 * x) / (x ^ 2 - 2 * x + 2)) 0 1.
   by have hx := x2p1 x; lra.
 rewrite !RInt_plus; (repeat  (apply: ex_RInt_plus|| apply: ex_RInt_scal))=> //.
 rewrite RInt_Spart1 RInt_Spart2 RInt_Spart3.
-rewrite /plus [AbelianGroup.plus _ _ ]/=.
+rewrite /plus [AbelianMonoid.plus _ _ ]/=.
 by lra.
 Qed.
 End Plouffe.
