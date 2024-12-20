@@ -2,12 +2,13 @@ From mathcomp Require Import ssreflect.
 Require Import PeanoNat ZArith.
 From Coquelicot Require Import Coquelicot.
 Require Import Reals Field Psatz Plouffe CPlouffe Billion0.
+From Bignums Require Import BigN.
 
 (*
 Time Eval native_compute in sumV cprecision cdigit 4.
 *)
 
-Definition comp2 := 560355596508377 + bzero.
+Definition comp2 := (560355596508377 + bzero)%bigN.
 
 Lemma comp2_def : comp2 = sumV cprecision cdigit 4.
 Proof.
