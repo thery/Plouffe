@@ -1,8 +1,8 @@
 From mathcomp Require Import ssreflect.
-Require Import PeanoNat ZArith.
+From Stdlib Require Import PeanoNat ZArith.
 From Coquelicot Require Import Coquelicot.
-Require Import Reals Field Psatz Plouffe CPlouffe.
-Require Import Million0 Million1 Million2 Million3 Million4.
+From Stdlib Require Import Reals Field Psatz. 
+Require Import Plouffe CPlouffe  Million0 Million1 Million2 Million3 Million4.
 
 From Bignums Require Import BigN.
 

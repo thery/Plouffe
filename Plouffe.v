@@ -1,7 +1,7 @@
 (* Require ssreflect tactics *)
 From mathcomp Require Import ssreflect.
 (* working with Coq Reals *)
-Require Import PeanoNat Psatz Reals.
+From Stdlib Require Import PeanoNat Psatz Reals.
 (* Using Coquelicot for Series, Power Series and Integrals *)
 Require Import Coquelicot.Coquelicot.
 
@@ -129,7 +129,7 @@ exists l; move => eps Heps.
 case (il eps Heps) => // N Pn; exists (k * N)%nat => n nN.
 rewrite [n](Nat.div_mod _ _ kn0).
 set trm := (fun _ =>  _).
-case: (eq_nat_dec (n mod k) 0) => [->|Dk].
+case: (Peano_dec.eq_nat_dec (n mod k) 0) => [->|Dk].
   rewrite Nat.add_0_r sum_n_holes //.
   rewrite  (sum_n_ext  _ (fun i => (x ^ k) ^ i * a i)); last first.
     by move => i; rewrite Rmult_comm; congr (_ * _); rewrite pow_mult.
@@ -211,7 +211,7 @@ rewrite (RInt_ext _ (fun x => PSeries (PS_incr_n h8 (n - 1)) x)).
 (* exchange integral and power_series *)
   rewrite  RInt_PSeries //.
   apply: PS_cv=> // i; rewrite PS_incr_n_simplify /= /zero /=.
-  case: (le_lt_dec (n - 1) i); tlra.
+  case: (Compare_dec.le_lt_dec (n - 1) i); tlra.
   rewrite /h8 /hole.
   by case: Nat.eqb; lra.
 move=> y Hy.
@@ -285,7 +285,7 @@ case: k {  g hn0} kpos => [| n _]; first by move: (Nat.lt_irrefl 0).
 set PSL := PSeries _ _.
 rewrite (PSeries_decr_n_aux _ (n + 1) (/ (sqrt 2))); last first.
   case=> //= i Hi;rewrite PS_incr_n_simplify.
-  case: (le_lt_dec (S n - 1) i)=> e; tlia.
+  case: (Compare_dec.le_lt_dec (S n - 1) i)=> e; tlia.
   by rewrite /Rdiv Rmult_0_l.
 rewrite /PSL -PSeries_scal.
 apply: PSeries_ext=> i.
@@ -296,7 +296,8 @@ case Nat.eqb_spec => e; last first.
   rewrite /PS_Int PS_incr_n_simplify.
   have->: (n + i - (S n - 1) = i)%nat by lia.
   rewrite (iffRL (Nat.eqb_neq _ _) e).
-  by case: le_lt_dec; Rcotpatch; rewrite /= /Rdiv Rmult_0_l Rmult_0_r.
+  by case: Compare_dec.le_lt_dec; Rcotpatch; 
+     rewrite /= /Rdiv Rmult_0_l Rmult_0_r.
 rewrite /PS_scal.
 rewrite (_ : PS_decr_n _ _ _ = /(i + n + 1)%:R).
   suff -> : (8 * (i / 8) +  S n = i + n + 1)%nat.
@@ -305,7 +306,7 @@ rewrite (_ : PS_decr_n _ _ _ = /(i + n + 1)%:R).
 rewrite /PS_decr_n.
 have -> : (n + 1 + i = S (n + i))%nat by lia.
 rewrite /PS_Int PS_incr_n_simplify.
-case: (le_lt_dec (S n - 1) (n + i)) => Hi; tlia.
+case: (Compare_dec.le_lt_dec (S n - 1) (n + i)) => Hi; tlia.
 have-> : (n + i - (S n - 1) = i)%nat by lia.
 by rewrite e /Rdiv Rmult_1_l; congr (/_%:R); tlia.
 Qed.

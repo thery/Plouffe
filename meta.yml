@@ -1,0 +1,60 @@
+---
+fullname: Plouffe
+shortname: plouffe
+organization: thery
+opam_name: coq-plouffe
+community: false
+dune: false
+action: true
+
+synopsis: Plouffe in Rocq
+
+description: |-
+  Computing Pi decimal using Plouffe Formula in Rocq
+  
+authors:
+- name: Laurent Théry
+
+maintainers:
+- name: Laurent Théry
+  nickname: thery
+
+opam-file-maintainer: thery@sophia.inria.fr
+
+license:
+  fullname: MIT License
+  identifier: MIT
+
+supported_coq_versions:
+  text: '9.0 or later'
+  opam: '{(>= "9.0")}'
+
+dependencies:
+- opam:
+    name: coq-bignums
+  description: |-
+    [Bignums](https://github.com/coq/bignums) same version as Rocq
+- opam:
+    name: coq-mathcomp-ssreflect
+    version: '{(>= "2.4.0")}'
+  description: |-
+    [MathComp ssreflect 2.4 or later](https://math-comp.github.io)
+- opam:
+    name: coq-coquelicot
+    version: '{(>= "3.4.3")}'
+  description: |-
+    [Coquelicot 3.4.3 or later](https://gitlab.inria.fr/coquelicot/coquelicot)
+
+
+tested_coq_opam_versions:
+- version: '2.4.0-rocq-prover-9.0'
+  repo: 'mathcomp/mathcomp'
+
+namespace: plouffe
+
+keywords:
+- name: plouffe
+- name: pi
+
+
+---

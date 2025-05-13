@@ -1,8 +1,8 @@
 From mathcomp Require Import ssreflect.
-Require Import PeanoNat ZArith.
+From Stdlib Require Import PeanoNat ZArith.
 From Coquelicot Require Import Coquelicot.
-Require Import Reals Field Psatz Plouffe.
-Require Export String.
+From Stdlib Require Import Reals Field Psatz String.
+Require Import Plouffe.
 
 (******************************************************************************)
 (*                                                                            *)
@@ -94,7 +94,7 @@ Open Scope Z_scope.
 
 (* Some theorems from Z *)
 
-Require Import ZArith.
+Import ZArith.
 
 Lemma pow_Zpower a b : 
    Z.of_nat (a ^ b) =  (Z.of_nat a ^ Z.of_nat b)%Z.
