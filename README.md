@@ -19,12 +19,12 @@ Computing Pi decimal using Plouffe Formula in Rocq
 - Author(s):
   - Laurent Théry
 - License: [MIT License](LICENSE)
-- Compatible Coq versions: 9.0 or later
+- Compatible Rocq/Coq versions: 9.1 or later
 - Additional dependencies:
   - [Bignums](https://github.com/coq/bignums) same version as Rocq
-  - [MathComp ssreflect 2.4 or later](https://math-comp.github.io)
+  - [MathComp ssreflect 2.5 or later](https://math-comp.github.io)
   - [Coquelicot 3.4.3 or later](https://gitlab.inria.fr/coquelicot/coquelicot)
-- Coq namespace: `plouffe`
+- Rocq/Coq namespace: `plouffe`
 - Related publication(s): none
 
 ## Building and installation instructions

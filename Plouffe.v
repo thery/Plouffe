@@ -177,7 +177,7 @@ Qed.
 End Radius.
 
 
-Section Plouffe.
+Section PlouffeF.
 
 Lemma PSerie_pow_add x k f a:
   Series (fun i => (a i ) * x ^ (k + f i)) = 
@@ -569,4 +569,4 @@ rewrite RInt_Spart1 RInt_Spart2 RInt_Spart3.
 rewrite /plus [AbelianMonoid.plus _ _ ]/=.
 by lra.
 Qed.
-End Plouffe.
+End PlouffeF.
