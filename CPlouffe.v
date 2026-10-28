@@ -13,7 +13,7 @@ Require Import Plouffe.
 Ltac tlra := try lra.
 Ltac tlia := try lia.
 
-Notation "a %:R " := (INR a) (at level 10).
+Notation "a %:R " := (INR a) (at level 1).
 
 Open Scope nat_scope.
 
@@ -28,8 +28,8 @@ Proof.
 move=> Pc.
 case: (le_lt_dec (b * c) a) => Labc; last first.
   rewrite !le_minus_0; tlia.
-    by rewrite Nat.Div0.div_0_l; lia.
-  by apply: Nat.Div0.div_le_upper_bound; lia.
+    by apply: Nat.Div0.div_le_upper_bound; lia.
+  by rewrite Nat.Div0.div_0_l; lia.
 by rewrite -{2}(Nat.sub_add (b * c) a) // Nat.div_add; lia.
 Qed.
 
@@ -185,9 +185,9 @@ Lemma Int_part_INR b c : (0 < c)%nat ->
 Proof.
 move=> Pc.
 have ZPc : (0 < Z.of_nat c)%Z by apply: (inj_lt 0).
-rewrite {1}[b](_ : b = IZR (Int_part b) + frac_part b); last first.
+rewrite {1}[b](_ : b = IZR (Int_part b) + frac_part b).
   by rewrite /frac_part; lra.
-rewrite Rmult_plus_distr_r {1}INR_IZR_INZ -mult_IZR  plus_Int_part2; last first.
+rewrite Rmult_plus_distr_r {1}INR_IZR_INZ -mult_IZR  plus_Int_part2.
   by rewrite frac_part_IZR; have := base_fp (frac_part b * c %:R); lra.
 rewrite Int_part_IZR Z.div_add_l; tlia.
 rewrite Z.div_small; tlia; split.
@@ -237,23 +237,23 @@ have F2 := inj_lt  _ _ (F0 (k + n)%nat).
 rewrite -[(_ mod _)%nat]Nat2Z.id Nat2Z.inj_mod.
 rewrite Z2Nat.id //.
 rewrite Zdiv.Zmod_eq; tlia.
-rewrite Z2Nat.inj_sub; last first.
+rewrite Z2Nat.inj_sub.
   apply: Zmult_gt_0_le_0_compat; tlia.
   by apply: Z_div_pos; tlia.
-rewrite Z2Nat.inj_mul; tlia; last first.
+rewrite Z2Nat.inj_mul; tlia.
   by apply: Z_div_pos; tlia.
 rewrite Nat2Z.id -pow_INR Int_part_INR; tlia.
-rewrite (_ : (b ^ (k + n) = b ^ n * b ^ k)%nat) //; last first.
+rewrite (_ : (b ^ (k + n) = b ^ n * b ^ k)%nat) //.
   by rewrite Nat.pow_add_r Nat.mul_comm.
 rewrite Nat.mul_assoc Ndiv_minus //.
 rewrite mult_INR -Rmult_assoc.
 rewrite -(Int_part_INR (Rabs r) (b ^ n)) //.
 rewrite -[X in (_ = X - _)%nat]Nat2Z.id.
 rewrite Nat2Z.inj_div.
-rewrite Z2Nat.id; last first.
+rewrite Z2Nat.id.
   by rewrite Rmult_assoc -mult_INR Nat.mul_comm -Nat.pow_add_r pow_INR.
 rewrite Int_part_INR //.
-rewrite -{2}[Int_part _]Z2Nat.id //; last by rewrite pow_INR.
+rewrite -{2}[Int_part _]Z2Nat.id //; first by rewrite pow_INR.
 rewrite -Nat2Z.inj_div ?Nat2Z.id.
 rewrite Nat.mul_comm -Nat.Div0.mod_eq //.
 by rewrite /Rdigit /= Rmult_1_r.
@@ -269,7 +269,7 @@ have ->: (p = (p - 4) + 4)%nat by lia.
 have ->: (2 ^ (p - 4 + 4) / 16 = 2 ^ (p - 4))%nat.
   by rewrite Nat.pow_add_r Nat.div_mul.
 have F : Rabs r * 16 ^ d / 16 = Rabs (r * 16 ^ d / 16).
-  rewrite !Rabs_mult [Rabs (16 ^ _)]Rabs_pos_eq; last first.
+  rewrite !Rabs_mult [Rabs (16 ^ _)]Rabs_pos_eq.
     by apply: pow_le; lra.
   by rewrite [Rabs (/_)]Rabs_pos_eq; lra.
 rewrite F -Rdigit_mod_div; tlia.
@@ -378,14 +378,14 @@ rewrite [(_ / _)%R]Rmult_plus_distr_r.
 rewrite !Rmult_assoc Rinv_r ?Rmult_1_r; tlra.
 rewrite pow_INR.
 have->: (2%:R = 2)%R by rewrite /=; lra.
-have ->: forall a b c d,  a = c -> (a + b - d - c = b - d)%R; last by lra.
-  by move=> a1 b1 c1 d1 ->; ring.
+have ->: forall a b c d,  a = c -> (a + b - d - c = b - d)%R by move=> *; lra.
+  by lra.
 have ->: (2 ^ p = pS %:R)%R.
   by rewrite /pS; rewrite pow_INR.
 by rewrite -Rmult_assoc -mult_INR -/po; lra.
 Qed.
 
-Notation nat_iter n A f x := (nat_rect (fun _ => A) x (fun _ => f) n).
+Abbreviation nat_iter n A f x := (nat_rect (fun _ => A) x (fun _ => f) n).
 
 (* Compute \sum_{i = 0 to d - 1} (16^(d - 1 - i)) * 2^p / (8 * i + k) *)
 Definition NiterL k :=
@@ -417,7 +417,7 @@ rewrite /NiterL.
 elim: {-2}d (Nat.le_refl d) => // [dP dV| [|n] IH nLd _].
 - by contradict dV; lia.
 - rewrite /=.
-  suff ->: pS * NpowerMod 16 (d - 1 - 0) k / k <? pS = true.
+  suff ->: (pS * NpowerMod 16 (d - 1 - 0) k / k <? pS) = true.
     rewrite {-1 4}(_ : k = 8 * 0 + k); tlia.
     by apply:  base_sum_approxL; lia.
   rewrite Nat.ltb_lt; apply: Nat.Div0.div_lt_upper_bound; tlia.
@@ -454,8 +454,7 @@ case E : (_ <? _).
   rewrite [(u + _)%:R]plus_INR Rmult_plus_distr_r sum_N_predN; tlia.
   by rewrite [pred _]/= -/sum.
 exists (u + S u1).
-rewrite minus_INR; last first.
-  by rewrite -Nat.nlt_ge -Nat.ltb_lt E.
+rewrite minus_INR; first by rewrite -Nat.nlt_ge -Nat.ltb_lt E.
 rewrite [(u + _)%:R]plus_INR Rmult_plus_distr_r; tlia.
 rewrite sum_N_predN -/sum; tlia.
 rewrite S_INR Rmult_plus_distr_r Rmult_1_l.
@@ -618,10 +617,10 @@ rewrite /Rdiv Rmult_1_l.
 apply: Rinv_le_contravar; tlra.
 by apply: (le_INR 1); lia.
 set gg := (16 ^ d / 16 * 2 ^ p / (16 ^ n * (8 * n + k) %:R))%R.
-  rewrite  /Hierarchy.norm /= /abs /= Rabs_right.
-    by apply: Req_le. 
-apply: Rle_ge; apply: Rdiv_le_0_compat=>//.
-by apply:Rmult_lt_0_compat.
+rewrite  /Hierarchy.norm /= /abs /= Rabs_right.
+  apply: Rle_ge; apply: Rdiv_le_0_compat=>//.
+  by apply:Rmult_lt_0_compat.
+by apply: Req_le. 
 Qed.
 
 Lemma series_bound k : 0 < k -> 
@@ -665,7 +664,7 @@ apply: Rle_lt_trans (Series_le _ f1 _ _) _.
   apply: ex_series_geom.
   by split_Rabs; lra.
 rewrite Series_scal_l.
-rewrite Series_geom; last by split_Rabs; lra.
+rewrite Series_geom; first by split_Rabs; lra.
 set x := (_ * _)%R.
 have ->: x = ((16 ^ d * 2 ^ p * 16) / (15 * 16 ^ (d + p / 4 + 1)))%R.
   rewrite /x !Rdef_pow_add pow_1.
@@ -673,12 +672,12 @@ have ->: x = ((16 ^ d * 2 ^ p * 16) / (15 * 16 ^ (d + p / 4 + 1)))%R.
   have : (0 < 16 ^ (p / 4))%R by apply: pow_lt; lra.
   have : (0 < 16 ^ d)%R by apply: pow_lt; lra.
   by lra.
-rewrite Rcomplements.Rlt_div_l; last first.
+rewrite Rcomplements.Rlt_div_l.
   apply: Rmult_lt_0_compat; tlra.
   by apply: pow_lt; lra.
 have ->: (1 * (15 * 16 ^ (d + p / 4 + 1)) = 
              16  ^ d * (2 ^ (4 * (p / 4 + 1)) * 15))%R.
-  rewrite pow_mult (_ : (2 ^ 4 = 16)%R); last by ring.
+  rewrite pow_mult (_ : (2 ^ 4 = 16)%R); first by ring.
   by rewrite !pow_add; ring.
 rewrite !Rmult_assoc.
 apply: Rmult_lt_compat_l.
@@ -708,7 +707,7 @@ case: (lt_dec 0 d) => Pd.
   have := sumLE _ Pk Pd.
   case: NiterL => _ s1 [u Hs1]; exists u.
   case: (lt_dec 0 (p / 4)) => Pp.
-    rewrite (Series_incr_n _ (p/4)) //; last first.
+    rewrite (Series_incr_n _ (p/4)) //.
       by rewrite -ex_series_incr_n.
     replace (pred (p / 4)) with (p / 4 - 1); tlia.
     have := sumRE _ Pk Pp.
@@ -830,7 +829,7 @@ have  YE: Y%:R =  (4 * (NsumV 1)%:R +
              (9 * 2 ^ p - (2 * NsumV 4 + NsumV 5 + NsumV 6)%:R 
                         - 4 * delta%:R))%R.
   rewrite /Y /delta !(mult_INR, plus_INR).
-  rewrite minus_INR; last by rewrite -/delta; lia.
+  rewrite minus_INR; first by rewrite -/delta; lia.
   by rewrite !(mult_INR, plus_INR) !NNE; lra.
 have P1 :
   (Y%:R + v1%:R * 2 ^ p < X + v2%:R * 2 ^ p + 9 * 2 ^ p <
@@ -864,49 +863,49 @@ have F5 : 1 < 2 by lia.
 have := mod_between Y 2 c1 (8 * delta) (p - 4) p F2 F3 Hdelta F5 HmodEq.
 rewrite /c1 /zz /yy.
 rewrite -{1}[Y]Nat2Z.id.
-rewrite -Z2Nat.inj_add; tlia; last first.
+rewrite -Z2Nat.inj_add; tlia.
   apply: le_Int_part_pos. 
   have := pos_INR Y.
   by rewrite /zz /yy in Fc1; lra.
 rewrite -R_Ifp.Int_part_INR.
-rewrite -plus_Int_part2; last first.
+rewrite -plus_Int_part2.
   set V := (_ - _)%R.
   have := base_fp V.
   by rewrite INR_IZR_INZ frac_part_IZR; lra.
 set U := (_ + _)%R.
 have ->: U = (X + ((v2 + 9) * 2  ^p ) %:R - (v1 * 2 ^ p)%:R)%R.
   by rewrite !mult_INR !plus_INR pow_INR !NNE /U /xx; lra.
-rewrite Rminus_Int_part1; last first.
+rewrite Rminus_Int_part1.
   set V := (_ + _)%R.
   have := base_fp V.
   by rewrite INR_IZR_INZ frac_part_IZR; lra.
-rewrite plus_Int_part2; last first.
+rewrite plus_Int_part2.
   have := base_fp X.
   by rewrite INR_IZR_INZ frac_part_IZR; lra.
 rewrite !R_Ifp.Int_part_INR.
 rewrite Z2Nat.inj_sub; tlia.
-rewrite Z2Nat.inj_add; tlia; last first.
+rewrite Z2Nat.inj_add; tlia.
   by apply: le_Int_part_pos; lra.
-rewrite !Nat2Z.id mod_minus_mult; tlia; last first.
+rewrite !Nat2Z.id mod_minus_mult; tlia.
   have FF x : x * 2 ^ p = Z.to_nat (Int_part (x%:R * 2 ^ p)).
     by rewrite -PSE -mult_INR R_Ifp.Int_part_INR Nat2Z.id.
-  rewrite !{}FF -Z2Nat.inj_add; try apply: le_Int_part_pos; tlra; last first.
+  rewrite !{}FF -Z2Nat.inj_add; try apply: le_Int_part_pos; tlra.
     by rewrite -PSE -mult_INR; apply: pos_INR.
   rewrite -Z2Nat.inj_le.
-  - rewrite -plus_Int_part2; last first.
-      rewrite -PSE -mult_INR.
-      have := base_fp X.
-      by rewrite INR_IZR_INZ frac_part_IZR; lra.
-    apply: le_Int_part.
-    rewrite /xx in GG.
-    by rewrite plus_INR NE; lra.
   - apply: le_Int_part_pos.
     rewrite -PSE -mult_INR.
     by apply: pos_INR.
-  rewrite -PSE -mult_INR.
-  rewrite R_Ifp.Int_part_INR .
-  suff : (0 <= Int_part X)%Z by lia.
-  by apply: le_Int_part_pos.
+  - rewrite -PSE -mult_INR.
+    rewrite R_Ifp.Int_part_INR .
+    suff : (0 <= Int_part X)%Z by lia.
+    by apply: le_Int_part_pos.
+  rewrite -plus_Int_part2.
+    rewrite -PSE -mult_INR.
+    have := base_fp X.
+    by rewrite INR_IZR_INZ frac_part_IZR; lra.
+  apply: le_Int_part.
+  rewrite /xx in GG.
+  by rewrite plus_INR NE; lra.
 rewrite Nat.Div0.mod_add; tlia.
 rewrite /X -PigE.
 have ->: (16 ^ d / 16 * 2 ^ p * PI = Rabs PI * 16 ^ d / 16 * 2 ^ p)%R.
@@ -1053,7 +1052,7 @@ rewrite BigN.spec_modulo -[X in _ = X]Nat2Z.id.
 by rewrite Nat2Z.inj_mod ?Z2Nat.id //; tlia; try by apply: BigN.spec_pos.
 Qed.
 
-Lemma specN_cmp m n : m <? n = ([[m]] <? [[n]])%nat.
+Lemma specN_cmp m n : (m <? n) = ([[m]] <? [[n]])%nat.
 Proof.
 rewrite BigN.spec_ltb.
 case E : (_ <? _)%nat.
@@ -1070,7 +1069,7 @@ Lemma specN_if_cmp m n p q :
   (if [[m]] <? [[n]] then [[p]] else [[q]])%nat.
 Proof. by rewrite specN_cmp; case: (_ <? _)%nat. Qed.
 
-Lemma specN_eqb m n : m =? n = ([[m]] =? [[n]])%nat.
+Lemma specN_eqb m n : (m =? n) = ([[m]] =? [[n]])%nat.
 Proof.
 rewrite BigN.spec_eqb.
 case: Nat.eqb_spec.
@@ -1088,21 +1087,21 @@ Proof. by rewrite specN_eqb; case: Nat.eqb. Qed.
 Lemma specN_shiftl m n : 
   ([[BigN.shiftl m n]] = (2 ^ [[n]]) * [[m]])%nat.
 Proof.
-rewrite BigN.spec_shiftl Z.shiftl_mul_pow2; last first.
+rewrite BigN.spec_shiftl Z.shiftl_mul_pow2.
   by apply: BigN.spec_pos.
-rewrite Z2Nat.inj_mul; last 2 first.
+rewrite Z2Nat.inj_mul.
 - by apply: BigN.spec_pos.
 - by apply: Z.pow_nonneg.
 rewrite -[(_ ^ _)%nat]Nat2Z.id pow_Zpower !Z2Nat.id.
-  by rewrite Nat.mul_comm.
-by apply: BigN.spec_pos.
+  by apply: BigN.spec_pos.
+by rewrite Nat.mul_comm.
 Qed.
 
 Lemma specN_shiftr m n : 
   [[BigN.shiftr m n]] = ([[m]] / (2 ^ [[n]]))%nat.
 Proof.
 rewrite BigN.spec_shiftr.
-  rewrite Z.shiftr_div_pow2; last first.
+  rewrite Z.shiftr_div_pow2.
   by apply: BigN.spec_pos.
 rewrite -[(_ / _)%nat]Nat2Z.id.
 rewrite Nat2Z.inj_div ?pow_Zpower ?Z2Nat.id //.

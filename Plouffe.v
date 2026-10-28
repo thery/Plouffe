@@ -12,7 +12,7 @@ Require Import Coquelicot.Coquelicot.
 (*                                                                            *)
 (******************************************************************************)
 
-Notation "a %:R " := (INR a) (at level 10).
+Notation "a %:R " := (INR a) (at level 1).
 
 Open Scope R_scope.
 
@@ -118,8 +118,8 @@ Lemma fill_holes k a x :
   PSeries (hole k a) x = Series (fun n => a n * x ^ (k * n)).
 Proof.
 move=> kn0 exs; rewrite /PSeries /Series.
-rewrite -(Lim_seq_subseq (sum_n _) (fun n => k * n)%nat).
-- set u := fun _ => _; set v:= sum_n _.
+rewrite -(Lim_seq_subseq (sum_n _) (fun n => k * n)%nat); first 2 last.
+- set u := fun _ => _; set v := sum_n _.
   rewrite (Lim_seq_ext u v) /u /v // => n.
   by apply: sum_n_holes.
 - apply: eventually_subseq => n.
@@ -131,18 +131,18 @@ rewrite [n](Nat.div_mod _ _ kn0).
 set trm := (fun _ =>  _).
 case: (Peano_dec.eq_nat_dec (n mod k) 0) => [->|Dk].
   rewrite Nat.add_0_r sum_n_holes //.
-  rewrite  (sum_n_ext  _ (fun i => (x ^ k) ^ i * a i)); last first.
+  rewrite  (sum_n_ext  _ (fun i => (x ^ k) ^ i * a i)).
     by move => i; rewrite Rmult_comm; congr (_ * _); rewrite pow_mult.
   apply: Pn.
   by apply: Nat.div_le_lower_bound; lia.
 move: (sumf_f_R0_add_r trm (k * (n / k)) (n mod k)).
 rewrite -!sum_n_Reals=> -> //.
-rewrite (_ : sum_n _ (pred _) = 0) ?Rplus_0_r; last first.
+rewrite (_ : sum_n _ (pred _) = 0) ?Rplus_0_r.
   apply: sum_n_holes_small.
   have := Nat.mod_upper_bound n _ kn0.
   by case: (_ mod _)%nat Dk => [|u] /=; tlia.
 rewrite sum_n_holes //.
-rewrite (sum_n_ext _ (fun i => (x ^ k) ^ i * a i)); last first.
+rewrite (sum_n_ext _ (fun i => (x ^ k) ^ i * a i)).
   by move => i; rewrite Rmult_comm; congr (_ * _); rewrite pow_mult.
 apply: Pn.
 by apply: Nat.div_le_lower_bound; lia.
@@ -166,7 +166,7 @@ suff F : Rbar.Rbar_le (Rbar.Finite ((x + 1) / 2)) (CV_radius a).
 apply: F1.
 exists 1 => n.
 have [H1 H2] := aP n.
-rewrite Rabs_pos_eq; last first.
+rewrite Rabs_pos_eq.
   apply: Rmult_le_pos; tlra.
   by apply: pow_le; lra.
 rewrite -{2}(Rmult_1_r 1).
@@ -194,7 +194,7 @@ Lemma PSeries_hole x a d k :  0 <= x < 1 ->
 Proof.
 move=> [Hx0 Hx1].
 rewrite PSerie_pow_add.
-rewrite -fill_holes //;first by rewrite PSeries_incr_n.
+rewrite -fill_holes //; last by rewrite PSeries_incr_n.
 apply: (ex_series_ext (fun i =>  a * (x ^ (S k)) ^ i)) => [i|].
   rewrite pow_n_pow /scal /= /mult /=; lra.
 apply: ex_series_scal; apply/ex_series_geom/pow_lt_1.
@@ -208,15 +208,15 @@ Proof.
 move=> xpos xlt1 npos.
 set h8 := hole _ _.
 rewrite (RInt_ext _ (fun x => PSeries (PS_incr_n h8 (n - 1)) x)).
+  move=> y Hy.
+  rewrite -PSeries_hole ; last by apply: Series_ext=>i; lra.
+  by move: Hy;rewrite Rmin_left ?Rmax_right; lra.
 (* exchange integral and power_series *)
-  rewrite  RInt_PSeries //.
-  apply: PS_cv=> // i; rewrite PS_incr_n_simplify /= /zero /=.
-  case: (Compare_dec.le_lt_dec (n - 1) i); tlra.
-  rewrite /h8 /hole.
-  by case: Nat.eqb; lra.
-move=> y Hy.
-rewrite -PSeries_hole ; first by apply: Series_ext=>i; lra.
-by move: Hy;rewrite Rmin_left ?Rmax_right; lra.
+rewrite  RInt_PSeries //.
+apply: PS_cv=> // i; rewrite PS_incr_n_simplify /= /zero /=.
+case: (Compare_dec.le_lt_dec (n - 1) i); tlra.
+rewrite /h8 /hole.
+by case: Nat.eqb; lra.
 Qed.
 
 
@@ -251,23 +251,22 @@ have sqrt2_1 : 1 < sqrt 2.
 have sqrt2i_1 : / sqrt 2 < 1.
   by rewrite -[X in _ < X]Rinv_1; apply: Rinv_1_lt_contravar; lra.
 pose g x i := x ^ (k - 1 + 8 * i).
-rewrite (RInt_ext _ (fun x => ( Series (g x)))); last first.
+rewrite (RInt_ext _ (fun x => ( Series (g x)))).
   move=> x; rewrite Rmin_left ?Rmax_right //; tlra; move=> [hx0 hx1].
   rewrite /g. 
-  rewrite (Series_ext _ (fun i : nat => 1 * x ^ (k - 1 + 8 * i))); last first.
+  rewrite (Series_ext _ (fun i : nat => 1 * x ^ (k - 1 + 8 * i))).
     by move => i ; lra.
   rewrite PSerie_pow_add.     
-  rewrite (Series_ext _ (fun i => (x ^ 8) ^ i))=>[|i];last first.
+  rewrite (Series_ext _ (fun i => (x ^ 8) ^ i))=>[i|].
     by rewrite pow_mult; lra.
   by rewrite Series_geom //; apply: pow_lt_1; rewrite Rabs_pos_eq;lra.
 rewrite RInt_Series_hole //; tlra.
 rewrite (Series_ext _ 
          (fun n0 => (/(sqrt 2)) ^ k / (8 * n0 +k)%:R * 
-              (/(sqrt 2)) ^ (ssrnat.muln 8 n0))); last first.
-  move=> i.
+              (/(sqrt 2)) ^ (ssrnat.muln 8 n0))) => [i|].
   have <- : ( 8 * i)%nat = ssrnat.muln 8 i by [].
   by rewrite pow_add; lra.
-rewrite -fill_holes; tlia; last first.
+rewrite -fill_holes; tlia.
   apply: (ex_pseries_ext  
           (fun i => (/(sqrt 2)) ^ k / (8 * i + k) %:R)) => [i|]; Rcotpatch; tlra.
   apply: CV_radius_inside.
@@ -283,8 +282,8 @@ rewrite -fill_holes; tlia; last first.
   by apply Rlt_le, pow_lt_1_compat; tlra. 
 case: k {  g hn0} kpos => [| n _]; first by move: (Nat.lt_irrefl 0).
 set PSL := PSeries _ _.
-rewrite (PSeries_decr_n_aux _ (n + 1) (/ (sqrt 2))); last first.
-  case=> //= i Hi;rewrite PS_incr_n_simplify.
+rewrite (PSeries_decr_n_aux _ (n + 1) (/ (sqrt 2)))=> [[]//= i Hi|].
+  rewrite PS_incr_n_simplify.
   case: (Compare_dec.le_lt_dec (S n - 1) i)=> e; tlia.
   by rewrite /Rdiv Rmult_0_l.
 rewrite /PSL -PSeries_scal.
@@ -299,7 +298,7 @@ case Nat.eqb_spec => e; last first.
   by case: Compare_dec.le_lt_dec; Rcotpatch; 
      rewrite /= /Rdiv Rmult_0_l Rmult_0_r.
 rewrite /PS_scal.
-rewrite (_ : PS_decr_n _ _ _ = /(i + n + 1)%:R).
+rewrite (_ : PS_decr_n _ _ _ = /(i + n + 1)%:R); last first.
   suff -> : (8 * (i / 8) +  S n = i + n + 1)%nat.
     rewrite /= Rmult_comm /= pow_add pow_1; Rcotpatch; lra.
   by rewrite {2}(Nat.div_mod i 8); lia.
@@ -368,7 +367,7 @@ have D_part1 x:    Derive (fun x => -2 * ln (x ^ 2 - 2 * x + 2)) x  =
   have hx := x2p1 x.
   by apply: is_derive_unique; auto_derive; Rcotpatch;   tlra; try   field;tlra.
 rewrite (RInt_ext _ (Derive (fun x => -2 * ln (x ^ 2 - 2 * x + 2))))=> 
-    [|x _]; last by rewrite D_part1.
+    [x _|]; first by rewrite D_part1.
 set f := fun x => _.
 have ->: 2 * (ln 2 - ln 1) = f 1 - f 0.
   rewrite /f pow1 Rmult_1_r  pow_ne_zero; tlia.
@@ -422,7 +421,7 @@ Lemma RInt_Spart3 :
   RInt (fun x => (4 * x) / (x ^ 2 - 2)) 0 1 = 2 * (ln 1 - ln 2).
 Proof.
 rewrite (RInt_ext _ (Derive (fun x => 2 * ln (2 - x ^ 2))))
-     => [|x Hx]; last first.
+     => [x Hx|].
   rewrite Rmin_left in Hx; auto with real.
   rewrite Rmax_right in Hx; auto with real.
   by rewrite Derive_ln_x2 //; apply: x_between; lra.
@@ -457,7 +456,7 @@ Qed.
 Lemma RInt_Spart2 : RInt (fun x => 4 / (1 + (x  - 1)^ 2)) 0 1 = PI.
 Proof.
 rewrite (RInt_ext _ (Derive (fun x => 4 * atan (x - 1))))
-        =>  [|x _]; last first.
+        =>  [x _|].
   by rewrite Derive_4atan.
 set f := fun x => _.
 have ->: PI = f 1 - f 0.
@@ -489,7 +488,7 @@ replace 0 with (g 0) by (rewrite /g; ring).
 replace (/sqrt 2) with (g 1); last by rewrite /g; lra.
 have Rth1 := @RInt_comp_lin R_CompleteNormedModule.
 rewrite /scal /= /mult /= in Rth1.
-rewrite -{}Rth1; last first.
+rewrite -{}Rth1.
   have hm1 : 0 < / sqrt 2 < 1.
     split; first by apply/Rinv_0_lt_compat/sqrt_lt_R0; lra.
     have hsqrt2m1_pos := sqrt2m1_pos.
@@ -503,8 +502,9 @@ rewrite -{}Rth1; last first.
   apply: ex_RInt_continuous => x hx;
   apply:ex_derive_continuous; auto_derive; apply H;
   rewrite !(Rmin_left, Rmax_right) in hx; tlra.
-rewrite (RInt_ext _ (fun y => (16 * (y -1)) / (y^4 -2 * y^3 + 4* y -4))); last first.
-  move=> x ; rewrite Rmin_left ?Rmax_right ; tlra=>-[hx0 hx1].
+rewrite (RInt_ext _ (fun y => (16 * (y - 1)) / (y ^ 4 - 2 * y ^ 3 + 4 * y - 4)))
+     => [x|].
+  rewrite Rmin_left ?Rmax_right ; tlra=>-[hx0 hx1].
   have hsqrt20 := sqrt2_neq_0.
   rewrite ![(_ - _)%nat]/= Rplus_0_r pow_O pow_1 !Rpow_mult_distr !pow_inv //.
   set s2 := sqrt 2.
@@ -536,8 +536,9 @@ rewrite (RInt_ext _ (fun y => (16 * (y -1)) / (y^4 -2 * y^3 + 4* y -4))); last f
       by rewrite pow_sqr  ?sqrt_sqrt; lra.
     by apply: Rmult_integral_contrapositive; split;  tlra.
   by apply: Rminus_diag_uniq; field.
-rewrite (RInt_ext _ (fun x =>  (4 - 4*x)/(x^2 -2* x +2) + (4 / (1 + (x -1)^2) + ((4* x)/(x^2 -2))))); last first.
-  move=> x ; rewrite Rmin_left ?Rmax_right ; tlra=>-[hx0 hx1].
+rewrite (RInt_ext _ (fun x =>  (4 - 4 * x) / (x ^ 2 - 2 * x + 2) + 
+          (4 / (1 + (x -1) ^ 2) + ((4 * x) / (x ^ 2 - 2))))) => [x|].
+  rewrite Rmin_left ?Rmax_right ; tlra=>-[hx0 hx1].
   have ->: (1 + (x - 1) ^ 2) = (x ^ 2 - 2 * x + 2) by ring.
   have -> : (x ^ 4 - 2 * x ^ 3 + 4 * x - 4) = (x ^ 2 - 2 * x + 2) * (x ^ 2 - 2) by ring.
   apply: Rminus_diag_uniq; field.
@@ -549,7 +550,7 @@ rewrite (RInt_ext _ (fun x =>  (4 - 4*x)/(x^2 -2* x +2) + (4 / (1 + (x -1)^2) + 
     suff : 0 < 2 - x^2 by lra.
     by apply/btwnsqrt2; tlra.
   move:hxm1.
-  by have <-:  1 + (x - 1) ^ 2 = x^2 -2 *x +2 by ring.
+  by have <-:  1 + (x - 1) ^ 2 = x ^2 - 2 * x + 2 by ring.
 have ex_RI1: ex_RInt (fun y : R => / (1 + (y - 1) ^ 2)) 0 1.
   apply: ex_RInt_continuous => x _.
   apply:ex_derive_continuous; auto_derive.
