@@ -1,6 +1,6 @@
 ---
 fullname: Plouffe
-shortname: plouffe
+shortname: Plouffe
 organization: thery
 opam_name: coq-plouffe
 community: false
@@ -10,7 +10,10 @@ action: true
 synopsis: Plouffe in Rocq
 
 description: |-
-  Computing Pi decimal using Plouffe Formula in Rocq
+  Computing digits of Pi using Plouffe's formula in Rocq.
+  By default, the build computes and proves the millionth hexadecimal
+  digit of Pi (files Million*.v). `make billion` switches the build to
+  the billionth digit (files Billion*.v); `make million` switches back.
   
 authors:
 - name: Laurent Théry
@@ -50,7 +53,7 @@ tested_coq_opam_versions:
 - version: '2.6.0-rocq-prover-9.2'
   repo: 'mathcomp/mathcomp'
 
-namespace: plouffe
+namespace: Plouffe
 
 keywords:
 - name: plouffe

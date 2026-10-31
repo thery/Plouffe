@@ -1,0 +1,36 @@
+# This file was generated from `meta.yml`, please do not edit manually.
+# Follow the instructions on https://github.com/coq-community/templates to regenerate.
+
+opam-version: "2.0"
+maintainer: "thery@sophia.inria.fr"
+version: "dev"
+
+homepage: "https://github.com/thery/Plouffe"
+dev-repo: "git+https://github.com/thery/Plouffe.git"
+bug-reports: "https://github.com/thery/Plouffe/issues"
+license: "MIT"
+
+synopsis: "Plouffe in Rocq"
+description: """
+Computing digits of Pi using Plouffe's formula in Rocq.
+By default, the build computes and proves the millionth hexadecimal
+digit of Pi (files Million*.v). `make billion` switches the build to
+the billionth digit (files Billion*.v); `make million` switches back."""
+
+build: [make "-j%{jobs}%"]
+install: [make "install"]
+depends: [
+  "coq" {(>= "9.2")}
+  "coq-bignums" 
+  "rocq-mathcomp-ssreflect" {(>= "2.6.0")}
+  "coq-coquelicot" {(>= "3.4.5")}
+]
+
+tags: [
+  "keyword:plouffe"
+  "keyword:pi"
+  "logpath:Plouffe"
+]
+authors: [
+  "Laurent Théry"
+]
