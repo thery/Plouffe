@@ -13,9 +13,21 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 
 
 Computing digits of Pi using Plouffe's formula in Rocq.
+
 By default, the build computes and proves the millionth hexadecimal
-digit of Pi (files Million*.v). `make billion` switches the build to
-the billionth digit (files Billion*.v); `make million` switches back.
+digit of Pi (files Million*.v). To get the billionth digit instead
+(files Billion*.v):
+
+```shell
+make billion  # build the Billion files instead of the Million ones
+make          # build
+```
+
+To go back to the millionth digit:
+
+```shell
+make million
+```
 
 ## Meta
 
